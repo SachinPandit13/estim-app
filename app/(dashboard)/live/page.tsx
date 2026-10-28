@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { apiClient } from "@/lib/api-client";
-import { usePolling } from "@/hooks/use-polling";
-import { StreamPlaceholder } from "@/components/shared/stream-placeholder";
-import { DataTableToolbar } from "@/components/shared/data-table-toolbar";
-import { EmptyState } from "@/components/shared/empty-state";
-import { ErrorState } from "@/components/shared/error-state";
-import { Button } from "@/components/ui/button";
-import { Video, Grid2X2, Grid3X3, LayoutList, RefreshCw } from "lucide-react";
-import type { Camera } from "@/types/api";
+import React, { useState } from 'react';
+import { apiClient } from '@/lib/api-client';
+import { usePolling } from '@/hooks/use-polling';
+import { StreamPlaceholder } from '@/components/shared/stream-placeholder';
+import { DataTableToolbar } from '@/components/shared/data-table-toolbar';
+import { EmptyState } from '@/components/shared/empty-state';
+import { ErrorState } from '@/components/shared/error-state';
+import { Button } from '@/components/ui/button';
+import { Video, Grid2X2, Grid3X3, LayoutList, RefreshCw } from 'lucide-react';
+import type { Camera } from '@/types/api';
 
 export default function LiveMonitoringPage() {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [gridLayout, setGridLayout] = useState<"2" | "3" | "1">("2");
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [gridLayout, setGridLayout] = useState<'2' | '3' | '1'>('2');
 
   const fetchCameras = async () => {
     try {
-      const data = await apiClient<Camera[]>("/cameras");
+      const data = await apiClient<Camera[]>('/cameras');
       setCameras(data);
       setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load camera feeds");
+      setError(err instanceof Error ? err.message : 'Failed to load camera feeds');
     } finally {
       setLoading(false);
     }
@@ -38,7 +38,7 @@ export default function LiveMonitoringPage() {
       cam.name.toLowerCase().includes(search.toLowerCase()) ||
       (cam.location && cam.location.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus =
-      statusFilter === "all" || cam.status.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === 'all' || cam.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
@@ -51,8 +51,8 @@ export default function LiveMonitoringPage() {
             Live Facility Telemetry & Video Feeds
           </h2>
           <p className="text-xs text-muted-foreground font-mono">
-            {cameras.length} registered cameras •{" "}
-            {cameras.filter((c) => c.status === "online").length} operational feeds
+            {cameras.length} registered cameras •{' '}
+            {cameras.filter((c) => c.status === 'online').length} operational feeds
           </p>
         </div>
 
@@ -60,34 +60,34 @@ export default function LiveMonitoringPage() {
         <div className="flex items-center gap-1.5 self-start sm:self-auto">
           <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
             <button
-              onClick={() => setGridLayout("1")}
+              onClick={() => setGridLayout('1')}
               title="Single Focus"
               className={`flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
-                gridLayout === "1"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                gridLayout === '1'
+                  ? 'bg-muted text-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <LayoutList className="size-3.5" />
             </button>
             <button
-              onClick={() => setGridLayout("2")}
+              onClick={() => setGridLayout('2')}
               title="2x2 Matrix"
               className={`flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
-                gridLayout === "2"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                gridLayout === '2'
+                  ? 'bg-muted text-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Grid2X2 className="size-3.5" />
             </button>
             <button
-              onClick={() => setGridLayout("3")}
+              onClick={() => setGridLayout('3')}
               title="3x3 Matrix"
               className={`flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
-                gridLayout === "3"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                gridLayout === '3'
+                  ? 'bg-muted text-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Grid3X3 className="size-3.5" />
@@ -101,7 +101,7 @@ export default function LiveMonitoringPage() {
             disabled={loading}
             className="h-8 gap-1.5 text-xs font-mono"
           >
-            <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -113,10 +113,10 @@ export default function LiveMonitoringPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Search cameras by name or zone..."
         totalCount={filteredCameras.length}
-        isFiltered={statusFilter !== "all" || search !== ""}
+        isFiltered={statusFilter !== 'all' || search !== ''}
         onResetFilters={() => {
-          setSearch("");
-          setStatusFilter("all");
+          setSearch('');
+          setStatusFilter('all');
         }}
       >
         <select
@@ -142,18 +142,18 @@ export default function LiveMonitoringPage() {
       ) : (
         <div
           className={`grid gap-4 ${
-            gridLayout === "1"
-              ? "grid-cols-1 max-w-3xl mx-auto"
-              : gridLayout === "3"
-              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-              : "grid-cols-1 md:grid-cols-2"
+            gridLayout === '1'
+              ? 'grid-cols-1 max-w-3xl mx-auto'
+              : gridLayout === '3'
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                : 'grid-cols-1 md:grid-cols-2'
           }`}
         >
           {filteredCameras.map((camera) => (
             <StreamPlaceholder
               key={camera.id}
               camera={camera}
-              onToggleStatus={fetchCameras}
+              // onToggleStatus={fetchCameras}
             />
           ))}
         </div>
