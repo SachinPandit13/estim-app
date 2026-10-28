@@ -1,7 +1,8 @@
-export type Role = "admin" | "supervisor" | "member";
-export type IncidentSeverity = "critical" | "high" | "medium" | "low";
-export type IncidentStatus = "open" | "acknowledged" | "resolved";
-export type CameraStatus = "online" | "offline" | "error";
+export type Role = 'admin' | 'supervisor' | 'member';
+export type IncidentSeverity = 'critical' | 'high' | 'medium' | 'low';
+export type IncidentStatus = 'open' | 'acknowledged' | 'resolved';
+export type CameraStatus = 'online' | 'offline' | 'error';
+export type CameraSourceType = 'rtsp' | 'ip' | 'webcam' | 'usb';
 
 export interface User {
   id: string;
@@ -135,4 +136,40 @@ export interface DbPoolStatus {
   status: string;
   pool_info?: Record<string, unknown>;
   message: string;
+}
+
+export interface TrackedObject {
+  track_id: number;
+  class_name: string;
+  confidence: number;
+  bbox: number[]; // [x_min, y_min, x_max, y_max] normalized 0.0 - 1.0
+  has_helmet: boolean;
+  has_vest: boolean;
+  is_fallen: boolean;
+  violation_type?: string | null;
+  current_zone_name?: string | null;
+  status: 'compliant' | 'warning' | 'violation';
+}
+
+export interface FrameInferenceRequest {
+  camera_id: string;
+  image_base64?: string;
+  trigger_incidents?: boolean;
+  simulated_detections?: Array<{
+    bbox?: number[];
+    confidence?: number;
+    has_helmet?: boolean;
+    has_vest?: boolean;
+    is_fallen?: boolean;
+  }>;
+}
+
+export interface FrameInferenceResponse {
+  camera_id: string;
+  timestamp: string;
+  tracked_workers: TrackedObject[];
+  violations_detected: string[];
+  incident_created: boolean;
+  incident_id?: string | null;
+  zone_alerts: string[];
 }
