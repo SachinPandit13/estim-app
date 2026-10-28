@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { apiClient } from "@/lib/api-client";
-import { usePolling } from "@/hooks/use-polling";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { SeverityBadge } from "@/components/shared/severity-badge";
-import { DataTableToolbar } from "@/components/shared/data-table-toolbar";
-import { EmptyState } from "@/components/shared/empty-state";
-import { ErrorState } from "@/components/shared/error-state";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { apiClient } from '@/lib/api-client';
+import { usePolling } from '@/hooks/use-polling';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { SeverityBadge } from '@/components/shared/severity-badge';
+import { DataTableToolbar } from '@/components/shared/data-table-toolbar';
+import { EmptyState } from '@/components/shared/empty-state';
+import { ErrorState } from '@/components/shared/error-state';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -16,14 +16,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 import {
   Table,
   TableHeader,
@@ -31,41 +31,38 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
-import {
-  Clock,
-  Eye,
-  ShieldCheck,
-  ImageIcon,
-} from "lucide-react";
-import type { SafetyIncident } from "@/types/api";
+} from '@/components/ui/table';
+import { Clock, Eye, ShieldCheck, ImageIcon } from 'lucide-react';
+import type { SafetyIncident } from '@/types/api';
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<SafetyIncident[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
 
   // Inspection & Action States
-  const [activeIncidentForDetail, setActiveIncidentForDetail] = useState<SafetyIncident | null>(null);
+  const [activeIncidentForDetail, setActiveIncidentForDetail] = useState<SafetyIncident | null>(
+    null,
+  );
   const [resolveIncidentId, setResolveIncidentId] = useState<string | null>(null);
-  const [resolutionNotes, setResolutionNotes] = useState("");
+  const [resolutionNotes, setResolutionNotes] = useState('');
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   const fetchIncidents = async () => {
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== "all") params.append("status", statusFilter);
-      if (severityFilter !== "all") params.append("severity", severityFilter);
-      params.append("limit", "100");
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (severityFilter !== 'all') params.append('severity', severityFilter);
+      params.append('limit', '100');
 
       const data = await apiClient<SafetyIncident[]>(`/incidents?${params.toString()}`);
       setIncidents(data);
       setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load incidents");
+      setError(err instanceof Error ? err.message : 'Failed to load incidents');
     } finally {
       setLoading(false);
     }
@@ -77,11 +74,11 @@ export default function IncidentsPage() {
     setActionInProgress(id);
     try {
       await apiClient<SafetyIncident>(`/incidents/${id}/acknowledge`, {
-        method: "PATCH",
+        method: 'PATCH',
       });
       await fetchIncidents();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to acknowledge incident");
+      alert(err instanceof Error ? err.message : 'Failed to acknowledge incident');
     } finally {
       setActionInProgress(null);
     }
@@ -91,21 +88,21 @@ export default function IncidentsPage() {
     e.preventDefault();
     if (!resolveIncidentId) return;
     if (!resolutionNotes.trim()) {
-      alert("Resolution notes are required to resolve an incident.");
+      alert('Resolution notes are required to resolve an incident.');
       return;
     }
 
     setActionInProgress(resolveIncidentId);
     try {
       await apiClient<SafetyIncident>(`/incidents/${resolveIncidentId}/resolve`, {
-        method: "PATCH",
+        method: 'PATCH',
         body: JSON.stringify({ resolution_notes: resolutionNotes }),
       });
       setResolveIncidentId(null);
-      setResolutionNotes("");
+      setResolutionNotes('');
       await fetchIncidents();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to resolve incident");
+      alert(err instanceof Error ? err.message : 'Failed to resolve incident');
     } finally {
       setActionInProgress(null);
     }
@@ -140,11 +137,11 @@ export default function IncidentsPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Filter incidents by hazard type or ID..."
         totalCount={filteredIncidents.length}
-        isFiltered={statusFilter !== "all" || severityFilter !== "all" || search !== ""}
+        isFiltered={statusFilter !== 'all' || severityFilter !== 'all' || search !== ''}
         onResetFilters={() => {
-          setSearch("");
-          setStatusFilter("all");
-          setSeverityFilter("all");
+          setSearch('');
+          setStatusFilter('all');
+          setSeverityFilter('all');
         }}
       >
         <select
@@ -201,7 +198,7 @@ export default function IncidentsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="font-semibold text-foreground capitalize text-xs">
-                      {incident.incident_type.replace(/_/g, " ")}
+                      {incident.incident_type.replace(/_/g, ' ')}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono text-muted-foreground">
                       <span>ID: {incident.id.slice(0, 8)}...</span>
@@ -219,15 +216,15 @@ export default function IncidentsPage() {
                     <div className="flex items-center gap-1">
                       <Clock className="size-3" />
                       {new Date(incident.last_detected_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
                       })}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       {new Date(incident.first_detected_at).toLocaleDateString([], {
-                        month: "short",
-                        day: "numeric",
+                        month: 'short',
+                        day: 'numeric',
                       })}
                     </div>
                   </TableCell>
@@ -248,7 +245,7 @@ export default function IncidentsPage() {
                         <Eye className="size-3" />
                       </Button>
 
-                      {incident.status === "open" && (
+                      {incident.status === 'open' && (
                         <Button
                           size="xs"
                           variant="outline"
@@ -260,13 +257,13 @@ export default function IncidentsPage() {
                         </Button>
                       )}
 
-                      {incident.status !== "resolved" && (
+                      {incident.status !== 'resolved' && (
                         <Button
                           size="xs"
                           variant="outline"
                           onClick={() => {
                             setResolveIncidentId(incident.id);
-                            setResolutionNotes("");
+                            setResolutionNotes('');
                           }}
                           className="h-7 text-xs font-mono border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
                         >
@@ -283,12 +280,16 @@ export default function IncidentsPage() {
       )}
 
       {/* Resolution Notes Modal */}
-      <Dialog open={!!resolveIncidentId} onOpenChange={(open) => !open && setResolveIncidentId(null)}>
+      <Dialog
+        open={!!resolveIncidentId}
+        onOpenChange={(open) => !open && setResolveIncidentId(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">Resolve Safety Incident</DialogTitle>
             <DialogDescription className="text-xs">
-              Provide formal supervisor notes detailing corrective actions taken on the facility floor.
+              Provide formal supervisor notes detailing corrective actions taken on the facility
+              floor.
             </DialogDescription>
           </DialogHeader>
 
@@ -330,7 +331,10 @@ export default function IncidentsPage() {
       </Dialog>
 
       {/* Incident Detail Inspection Drawer */}
-      <Sheet open={!!activeIncidentForDetail} onOpenChange={(open) => !open && setActiveIncidentForDetail(null)}>
+      <Sheet
+        open={!!activeIncidentForDetail}
+        onOpenChange={(open) => !open && setActiveIncidentForDetail(null)}
+      >
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           {activeIncidentForDetail && (
             <div className="space-y-5">
@@ -340,7 +344,7 @@ export default function IncidentsPage() {
                   <StatusBadge status={activeIncidentForDetail.status} />
                 </div>
                 <SheetTitle className="font-heading text-lg font-bold capitalize pt-1">
-                  {activeIncidentForDetail.incident_type.replace(/_/g, " ")}
+                  {activeIncidentForDetail.incident_type.replace(/_/g, ' ')}
                 </SheetTitle>
                 <SheetDescription className="font-mono text-xs">
                   Incident ID: {activeIncidentForDetail.id}
@@ -373,7 +377,9 @@ export default function IncidentsPage() {
               <div className="space-y-2 rounded-lg border border-border bg-card p-3 text-xs font-mono">
                 <div className="flex justify-between border-b border-border pb-1.5">
                   <span className="text-muted-foreground">First Detected:</span>
-                  <span>{new Date(activeIncidentForDetail.first_detected_at).toLocaleString()}</span>
+                  <span>
+                    {new Date(activeIncidentForDetail.first_detected_at).toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b border-border pb-1.5">
                   <span className="text-muted-foreground">Last Detected:</span>
@@ -386,7 +392,9 @@ export default function IncidentsPage() {
                 {activeIncidentForDetail.acknowledged_at && (
                   <div className="flex justify-between border-b border-border pb-1.5 text-amber-500">
                     <span>Acknowledged At:</span>
-                    <span>{new Date(activeIncidentForDetail.acknowledged_at).toLocaleString()}</span>
+                    <span>
+                      {new Date(activeIncidentForDetail.acknowledged_at).toLocaleString()}
+                    </span>
                   </div>
                 )}
                 {activeIncidentForDetail.resolved_at && (
