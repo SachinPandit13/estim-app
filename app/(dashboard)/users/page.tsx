@@ -153,7 +153,7 @@ export default function UsersPage() {
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none font-mono"
+                    className="w-full h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-hidden font-mono"
                   >
                     <option value="member">Member</option>
                     <option value="supervisor">Supervisor</option>
