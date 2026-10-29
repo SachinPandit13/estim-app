@@ -25,7 +25,18 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Cctv, Plus, Activity, Power, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Cctv,
+  Plus,
+  Activity,
+  Power,
+  CheckCircle2,
+  AlertCircle,
+  HardDrive,
+  Eye,
+  EyeOff,
+  Radio,
+} from 'lucide-react';
 import type { Camera, CameraCreateInput, CameraTestResult } from '@/types/api';
 
 export default function CamerasPage() {
@@ -36,22 +47,26 @@ export default function CamerasPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [testResult, setTestResult] = useState<{
     id: string;
     msg: string;
     success: boolean;
   } | null>(null);
 
-  // Form State
+  // Form State with Dynamic DVR standard defaults
   const [formData, setFormData] = useState<CameraCreateInput>({
     name: '',
     description: '',
     location: '',
-    source_type: 'rtsp',
+    source_type: 'dvr',
     stream_url: '',
-    rtsp_username: '',
-    rtsp_password: '',
+    dvr_host: '192.168.1.2',
+    dvr_port: 554,
     dvr_channel: 1,
+    subtype: 0,
+    rtsp_username: 'admin',
+    rtsp_password: '',
     is_enabled: true,
   });
 
@@ -115,6 +130,8 @@ export default function CamerasPage() {
         body: JSON.stringify({
           ...formData,
           dvr_channel: formData.dvr_channel ? Number(formData.dvr_channel) : 1,
+          dvr_port: formData.dvr_port ? Number(formData.dvr_port) : 554,
+          subtype: formData.subtype !== undefined ? Number(formData.subtype) : 0,
         }),
       });
       setIsDialogOpen(false);
@@ -122,11 +139,14 @@ export default function CamerasPage() {
         name: '',
         description: '',
         location: '',
-        source_type: 'rtsp',
+        source_type: 'dvr',
         stream_url: '',
-        rtsp_username: '',
-        rtsp_password: '',
+        dvr_host: '192.168.1.2',
+        dvr_port: 554,
         dvr_channel: 1,
+        subtype: 0,
+        rtsp_username: 'admin',
+        rtsp_password: '',
         is_enabled: true,
       });
       await fetchCameras();
@@ -137,6 +157,13 @@ export default function CamerasPage() {
     }
   };
 
+  // Live masked URL preview for dynamic DVR configuration
+  const liveDvrUrl = `rtsp://${formData.rtsp_username || 'USERNAME'}:${
+    formData.rtsp_password ? (showPassword ? formData.rtsp_password : '***') : 'PASSWORD'
+  }@${formData.dvr_host || '192.168.1.2'}:${formData.dvr_port || 554}/cam/realmonitor?channel=${
+    formData.dvr_channel || 1
+  }&subtype=${formData.subtype ?? 0}`;
+
   const filteredCameras = cameras.filter(
     (cam) =>
       cam.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -146,39 +173,65 @@ export default function CamerasPage() {
 
   return (
     <div className="space-y-4">
-      {/* Header bar */}
+      {/* Page Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
         <div>
           <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
-            Camera Registry & Video Ingestion
+            Camera Registry & Stream Feeds
           </h2>
           <p className="text-xs text-muted-foreground font-mono">
-            Configure industrial RTSP feeds, DVR channels, and hardware telemetry
+            {cameras.length} registered video sources • Industrial DVR / NVR RTSP streaming
           </p>
         </div>
 
-        <Button
-          size="sm"
-          onClick={() => setIsDialogOpen(true)}
-          className="h-8 gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
-        >
-          <Plus className="size-3.5" />
-          Add Camera Feed
-        </Button>
-
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <Button
+            size="sm"
+            onClick={() => setIsDialogOpen(true)}
+            className="h-8 gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
+          >
+            <Plus className="size-3.5" />
+            Add Camera
+          </Button>
+
+          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold">Register Camera Feed</DialogTitle>
+              <DialogTitle className="text-base font-semibold">
+                Register New Camera Stream
+              </DialogTitle>
               <DialogDescription className="text-xs">
-                Connect an industrial RTSP or IP stream to the worker safety inference pipeline.
+                Configure an Industrial DVR/NVR stream, custom RTSP IP camera, or local device
+                camera.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-3 py-2">
-              <div className="space-y-1">
+            <form onSubmit={handleSubmit} className="space-y-3.5 py-2">
+              {/* 3-Tab Source Type Selector */}
+              <div className="space-y-1.5">
                 <label className="text-xs font-medium">Source Type</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        source_type: 'dvr',
+                        stream_url: '',
+                      })
+                    }
+                    className={`flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-xs font-medium transition-colors ${
+                      formData.source_type === 'dvr'
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-semibold'
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <HardDrive className="size-4" />
+                    <span>DVR / NVR</span>
+                    <span className="text-[9px] font-mono text-muted-foreground">
+                      CP Plus / Dahua
+                    </span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() =>
@@ -188,14 +241,17 @@ export default function CamerasPage() {
                         stream_url: '',
                       })
                     }
-                    className={`flex items-center justify-center gap-1.5 rounded-lg border p-2 text-xs font-medium transition-colors ${
-                      formData.source_type !== 'webcam'
-                        ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-semibold'
+                    className={`flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-xs font-medium transition-colors ${
+                      formData.source_type === 'rtsp'
+                        ? 'border-purple-500 bg-purple-500/10 text-purple-400 font-semibold'
                         : 'border-border bg-card text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <Cctv className="size-3.5" />
-                    RTSP / IP Camera
+                    <Cctv className="size-4" />
+                    <span>Custom RTSP</span>
+                    <span className="text-[9px] font-mono text-muted-foreground">
+                      Direct IP URL
+                    </span>
                   </button>
 
                   <button
@@ -205,22 +261,26 @@ export default function CamerasPage() {
                         ...formData,
                         source_type: 'webcam',
                         stream_url: 'device://webcam',
-                        name: formData.name || 'System Device Webcam',
-                        location: formData.location || 'Local Workstation',
+                        name: formData.name || 'Workstation Webcam',
+                        location: formData.location || 'Control Room',
                       })
                     }
-                    className={`flex items-center justify-center gap-1.5 rounded-lg border p-2 text-xs font-medium transition-colors ${
+                    className={`flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-xs font-medium transition-colors ${
                       formData.source_type === 'webcam'
                         ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-semibold'
                         : 'border-border bg-card text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <Activity className="size-3.5" />
-                    System Webcam
+                    <Activity className="size-4" />
+                    <span>Device Cam</span>
+                    <span className="text-[9px] font-mono text-muted-foreground">
+                      USB / Hardware
+                    </span>
                   </button>
                 </div>
               </div>
 
+              {/* Camera Name */}
               <div className="space-y-1">
                 <label className="text-xs font-medium">Camera Name *</label>
                 <Input
@@ -228,7 +288,9 @@ export default function CamerasPage() {
                   placeholder={
                     formData.source_type === 'webcam'
                       ? 'e.g. Workstation Webcam'
-                      : 'e.g. Assembly Line North 01'
+                      : formData.source_type === 'dvr'
+                        ? 'e.g. Workshop Entrance Cam 01'
+                        : 'e.g. Perimeter Fence IP 02'
                   }
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -236,45 +298,137 @@ export default function CamerasPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Location / Zone</label>
-                  <Input
-                    placeholder="e.g. Warehouse Zone B"
-                    value={formData.location || ''}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                {formData.source_type !== 'webcam' ? (
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">DVR Channel</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="64"
-                      value={formData.dvr_channel ?? 1}
-                      onChange={(e) =>
-                        setFormData({ ...formData, dvr_channel: Number(e.target.value) })
-                      }
-                      className="h-8 text-xs font-mono"
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Device Type</label>
-                    <div className="h-8 flex items-center px-2 rounded-lg border border-border bg-muted/50 text-[11px] font-mono text-muted-foreground">
-                      USB / Integrated
-                    </div>
-                  </div>
-                )}
+              {/* Location */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Facility Location / Zone</label>
+                <Input
+                  placeholder="e.g. Assembly Bay 3 • Loading Dock"
+                  value={formData.location || ''}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="h-8 text-xs"
+                />
               </div>
 
-              {formData.source_type !== 'webcam' ? (
-                <>
+              {/* DVR Configuration Fields */}
+              {formData.source_type === 'dvr' && (
+                <div className="space-y-3 rounded-lg border border-blue-500/30 bg-blue-950/10 p-3">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 font-mono">
+                    <Radio className="size-3.5" />
+                    Standard Industrial DVR/NVR Parameters
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2 space-y-1">
+                      <label className="text-xs font-medium">DVR Host / IP Address *</label>
+                      <Input
+                        required
+                        placeholder="192.168.1.2"
+                        value={formData.dvr_host || ''}
+                        onChange={(e) => setFormData({ ...formData, dvr_host: e.target.value })}
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">RTSP Port</label>
+                      <Input
+                        type="number"
+                        placeholder="554"
+                        value={formData.dvr_port ?? 554}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dvr_port: Number(e.target.value) })
+                        }
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">DVR Channel (1–64)</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="64"
+                        value={formData.dvr_channel ?? 1}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dvr_channel: Number(e.target.value) })
+                        }
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Stream Profile</label>
+                      <select
+                        value={formData.subtype ?? 0}
+                        onChange={(e) =>
+                          setFormData({ ...formData, subtype: Number(e.target.value) })
+                        }
+                        className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs font-mono"
+                      >
+                        <option value={1}>Sub Stream (subtype=1) • AI Low Latency</option>
+                        <option value={0}>Main Stream (subtype=0) • Full HD</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">RTSP Username</label>
+                      <Input
+                        placeholder="admin"
+                        value={formData.rtsp_username || ''}
+                        onChange={(e) =>
+                          setFormData({ ...formData, rtsp_username: e.target.value })
+                        }
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">RTSP Password</label>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password"
+                          value={formData.rtsp_password || ''}
+                          onChange={(e) =>
+                            setFormData({ ...formData, rtsp_password: e.target.value })
+                          }
+                          className="h-8 text-xs font-mono pr-8"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="size-3.5" />
+                          ) : (
+                            <Eye className="size-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Dynamic URL Preview */}
+                  <div className="rounded-md border border-border bg-slate-900/90 p-2 text-[11px] font-mono text-slate-300">
+                    <span className="text-[10px] text-slate-500 uppercase block mb-1">
+                      Generated Dynamic RTSP Endpoint:
+                    </span>
+                    <span className="break-all text-amber-400 font-semibold">{liveDvrUrl}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Custom RTSP Stream URL */}
+              {formData.source_type === 'rtsp' && (
+                <div className="space-y-3 rounded-lg border border-purple-500/30 bg-purple-950/10 p-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium">RTSP Stream URL</label>
+                    <label className="text-xs font-medium">Custom RTSP Stream URL *</label>
                     <Input
+                      required
                       placeholder="rtsp://192.168.1.100:554/live/ch1"
                       value={formData.stream_url || ''}
                       onChange={(e) => setFormData({ ...formData, stream_url: e.target.value })}
@@ -282,7 +436,7 @@ export default function CamerasPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <label className="text-xs font-medium">RTSP Username</label>
                       <Input
@@ -291,7 +445,7 @@ export default function CamerasPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, rtsp_username: e.target.value })
                         }
-                        className="h-8 text-xs"
+                        className="h-8 text-xs font-mono"
                       />
                     </div>
                     <div className="space-y-1">
@@ -303,28 +457,32 @@ export default function CamerasPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, rtsp_password: e.target.value })
                         }
-                        className="h-8 text-xs"
+                        className="h-8 text-xs font-mono"
                       />
                     </div>
                   </div>
-                </>
-              ) : (
-                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-mono text-amber-300">
+                </div>
+              )}
+
+              {/* Webcam Banner */}
+              {formData.source_type === 'webcam' && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-mono text-amber-300">
                   <div className="flex items-center gap-1.5 font-semibold text-amber-400">
                     <Activity className="size-3.5" />
-                    Client Media Stream
+                    Direct Client Media Stream
                   </div>
                   <p className="mt-1 text-[11px] text-slate-300 leading-relaxed font-sans">
-                    This camera will stream directly from your browser device camera (built-in
-                    webcam or connected USB camera) for real-time safety inference.
+                    Streams live video frames directly from your browser webcam or connected USB
+                    camera for real-time safety and PPE verification.
                   </p>
                 </div>
               )}
 
+              {/* Description */}
               <div className="space-y-1">
-                <label className="text-xs font-medium">Description</label>
+                <label className="text-xs font-medium">Operational Description</label>
                 <Input
-                  placeholder="e.g. Overhead crane safety exclusion zone"
+                  placeholder="e.g. High-risk automated machinery perimeter"
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="h-8 text-xs"
@@ -347,7 +505,7 @@ export default function CamerasPage() {
                   size="sm"
                   className="h-8 text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
                 >
-                  {submitting ? 'Saving...' : 'Save Camera'}
+                  {submitting ? 'Registering...' : 'Save Camera'}
                 </Button>
               </DialogFooter>
             </form>
@@ -359,11 +517,11 @@ export default function CamerasPage() {
       <DataTableToolbar
         searchQuery={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Filter cameras by name or location..."
+        searchPlaceholder="Filter cameras by name, location, or source..."
         totalCount={filteredCameras.length}
       />
 
-      {/* Feedback banner if a test was run */}
+      {/* Test Diagnostic Result Banner */}
       {testResult && (
         <div
           className={`flex items-center gap-2 rounded-lg p-2.5 text-xs font-mono border ${
@@ -381,15 +539,15 @@ export default function CamerasPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Cameras Table */}
       {error && cameras.length === 0 ? (
         <ErrorState message={error} onRetry={fetchCameras} />
       ) : filteredCameras.length === 0 ? (
         <EmptyState
           icon={<Cctv className="size-6 text-muted-foreground" />}
           title="No cameras registered"
-          description="Register your industrial facility IP/RTSP streams to activate real-time hazard detection."
-          actionLabel="Register First Camera"
+          description="Register your industrial facility DVR/NVR or RTSP streams to activate real-time AI safety monitoring."
+          actionLabel="Add Camera"
           onAction={() => setIsDialogOpen(true)}
         />
       ) : (
@@ -398,7 +556,7 @@ export default function CamerasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Camera Name & Location</TableHead>
-                <TableHead>Type & Channel</TableHead>
+                <TableHead>Source & Channel</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Active State</TableHead>
                 <TableHead>Last Telemetry</TableHead>
@@ -414,11 +572,32 @@ export default function CamerasPage() {
                       {camera.location || 'Unassigned Zone'}
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs uppercase">
-                    <div>{camera.source_type}</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      CH {camera.dvr_channel ?? 1}
+                  <TableCell className="font-mono text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase ${
+                          camera.source_type === 'dvr'
+                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                            : camera.source_type === 'webcam'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                              : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                        }`}
+                      >
+                        {camera.source_type}
+                      </span>
+                      {camera.dvr_channel && (
+                        <span className="text-[11px] text-muted-foreground">
+                          CH {camera.dvr_channel}
+                        </span>
+                      )}
                     </div>
+                    {camera.config?.subtype !== undefined && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {camera.config.subtype === 1
+                          ? 'Sub Stream (subtype 1)'
+                          : 'Main Stream (subtype 0)'}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={camera.status} />
@@ -450,6 +629,7 @@ export default function CamerasPage() {
                         disabled={actionInProgress === camera.id}
                         onClick={() => handleTest(camera.id)}
                         className="h-7 text-xs font-mono gap-1"
+                        title="Test TCP Socket / Connectivity"
                       >
                         <Activity className="size-3 text-muted-foreground" />
                         Test
