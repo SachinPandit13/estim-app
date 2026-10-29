@@ -17,7 +17,6 @@ import {
   ShieldAlert,
   Activity,
   Flame,
-  UserCheck,
   UserX,
   Users,
 } from 'lucide-react';
@@ -43,6 +42,7 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const missedFramesRef = useRef<number>(0);
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
@@ -329,20 +329,21 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
 
         // If no human body/face is present in camera view:
         if (realCandidates.length === 0) {
+          missedFramesRef.current = 0;
           setHumanDetected(false);
           setTrackedWorkers([]);
           setActiveViolations([]);
-          if (hazards.length === 0) {
-            const canvas = canvasRef.current;
-            if (canvas) {
-              const ctx = canvas.getContext('2d');
-              ctx?.clearRect(0, 0, canvas.width, canvas.height);
-            }
-          } else {
+
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          if (hazards.length > 0) {
             drawHud([], hazards);
           }
 
-          // Notify backend tracker that 0 workers are in view (trigger incident if hazard exists)
+          // Notify backend tracker that 0 workers are in view (no fallback)
           await detectionService.inferFrame({
             camera_id: camera.id,
             trigger_incidents: hazards.length > 0,
@@ -352,6 +353,8 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
           return;
         }
 
+        // Real candidate present: reset missed frames counter
+        missedFramesRef.current = 0;
         setHumanDetected(true);
 
         // 2. Prepare payload candidates for all detected workers dynamically
@@ -428,6 +431,7 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
     } else {
       videoRef.current.pause();
       setIsPaused(true);
+      missedFramesRef.current = 0;
       setTrackedWorkers([]);
       setActiveViolations([]);
       setActiveHazards([]);
@@ -554,15 +558,9 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
                   </span>
                 )}
               </span>
-            ) : humanDetected ? (
-              <span className="text-emerald-400 border-l border-slate-700 pl-1.5 flex items-center gap-1 font-bold">
-                <UserCheck className="size-3 text-emerald-400" />
-                HUMAN DETECTED
-              </span>
             ) : (
-              <span className="text-slate-400 border-l border-slate-700 pl-1.5 flex items-center gap-1">
-                <UserX className="size-3 text-slate-500" />
-                SCANNING FOR WORKER...
+              <span className="text-slate-400 border-l border-slate-700 pl-1.5 flex items-center gap-1 font-mono">
+                <UserX className="size-3 text-slate-500" />0 WORKERS DETECTED • AREA CLEAR
               </span>
             )}
           </div>
@@ -704,6 +702,7 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
               const next = !isTrackingEnabled;
               setIsTrackingEnabled(next);
               if (!next) {
+                missedFramesRef.current = 0;
                 setTrackedWorkers([]);
                 setActiveViolations([]);
                 setActiveHazards([]);
