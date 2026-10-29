@@ -91,12 +91,13 @@ export default function SafetyEventsPage() {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none font-mono"
+          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-hidden font-mono"
         >
           <option value="all">All Anomaly Types</option>
-          <option value="helmet">Helmet / Head Protection</option>
-          <option value="vest">High-Visibility Safety Vest</option>
-          <option value="fall">Worker Fall Anomaly</option>
+          <option value="NO_HELMET">Missing Helmet / Hardhat</option>
+          <option value="NO_VEST">Missing High-Vis Vest</option>
+          <option value="WORKER_FALL_DETECTED">Worker Fall Anomaly</option>
+          <option value="ZONE_INTRUSION">Restricted Zone Intrusion</option>
           <option value="fire">Fire / Thermal Hazard</option>
           <option value="smoke">Smoke Dispersion</option>
         </select>
