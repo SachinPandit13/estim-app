@@ -19,11 +19,12 @@ import {
   Flame,
   UserCheck,
   UserX,
+  Users,
 } from 'lucide-react';
 
 import type { Camera, TrackedObject, FrameInferenceResponse } from '@/types/api';
 import { detectionService } from '@/lib/detection-service';
-import { visionDetector, type DetectedWorkerCandidate } from '@/lib/vision-detector';
+import { visionDetector } from '@/lib/vision-detector';
 
 interface WebcamStreamProps {
   camera: Camera;
@@ -35,7 +36,8 @@ type ModeType =
   | 'override_compliant'
   | 'override_no_helmet'
   | 'override_no_vest'
-  | 'override_fall';
+  | 'override_fall'
+  | 'override_fire';
 
 export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -54,6 +56,7 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
   const [isTrackingEnabled, setIsTrackingEnabled] = useState<boolean>(true);
   const [trackedWorkers, setTrackedWorkers] = useState<TrackedObject[]>([]);
   const [activeViolations, setActiveViolations] = useState<string[]>([]);
+  const [activeHazards, setActiveHazards] = useState<string[]>([]);
   const [detectionMode, setDetectionMode] = useState<ModeType>('live_vision');
   const [incidentAlert, setIncidentAlert] = useState<{ message: string; id?: string } | null>(null);
   const [humanDetected, setHumanDetected] = useState<boolean>(false);
@@ -154,7 +157,7 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
 
   // Render bounding box HUD overlay on canvas
   const drawHud = useCallback(
-    (workers: TrackedObject[]) => {
+    (workers: TrackedObject[], hazards: string[] = []) => {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       if (!canvas || !video) return;
@@ -171,6 +174,27 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (!isTrackingEnabled) return;
+
+      // Draw Environmental Hazards overlay if any detected
+      if (hazards.length > 0) {
+        hazards.forEach((hazard, hIdx) => {
+          const isFire = hazard.includes('FIRE');
+          const bannerY = 10 + hIdx * 32;
+          ctx.fillStyle = isFire ? 'rgba(220, 38, 38, 0.95)' : 'rgba(71, 85, 105, 0.95)';
+          ctx.fillRect(10, bannerY, 230, 26);
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(10, bannerY, 230, 26);
+
+          ctx.font = 'bold 11px monospace';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(
+            isFire ? '🔥 CRITICAL: FIRE DETECTED' : '💨 WARNING: SMOKE DETECTED',
+            18,
+            bannerY + 17,
+          );
+        });
+      }
 
       workers.forEach((worker) => {
         const [xMin, yMin, xMax, yMax] = worker.bbox;
@@ -293,76 +317,91 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
 
       try {
         // 1. Run real computer vision analysis directly on video frame pixels
-        const realCandidates: DetectedWorkerCandidate[] = visionDetector.analyzeFrame(
-          videoRef.current,
-        );
+        const detailed = visionDetector.analyzeFrameDetailed(videoRef.current);
+        const realCandidates = detailed.workers;
+        const hazards = [...detailed.hazards];
+        if (detectionMode === 'override_fire' && !hazards.includes('FIRE_DETECTED')) {
+          hazards.push('FIRE_DETECTED');
+        }
+
+        if (!isMounted) return;
+        setActiveHazards(hazards);
 
         // If no human body/face is present in camera view:
         if (realCandidates.length === 0) {
-          if (!isMounted) return;
           setHumanDetected(false);
           setTrackedWorkers([]);
           setActiveViolations([]);
-          const canvas = canvasRef.current;
-          if (canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+          if (hazards.length === 0) {
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const ctx = canvas.getContext('2d');
+              ctx?.clearRect(0, 0, canvas.width, canvas.height);
+            }
+          } else {
+            drawHud([], hazards);
           }
-          // Notify backend tracker that 0 workers are in view
+
+          // Notify backend tracker that 0 workers are in view (trigger incident if hazard exists)
           await detectionService.inferFrame({
             camera_id: camera.id,
-            trigger_incidents: false,
+            trigger_incidents: hazards.length > 0,
             simulated_detections: [],
+            environmental_hazards: hazards,
           });
           return;
         }
 
         setHumanDetected(true);
 
-        // 2. Prepare payload candidates based on detection mode
-        const candidate = realCandidates[0];
-        let finalHasHelmet = candidate.has_helmet;
-        let finalHasVest = candidate.has_vest;
-        let finalIsFallen = candidate.is_fallen;
+        // 2. Prepare payload candidates for all detected workers dynamically
+        const payloadCandidates = realCandidates.map((cand, idx) => {
+          let finalHasHelmet = cand.has_helmet;
+          let finalHasVest = cand.has_vest;
+          let finalIsFallen = cand.is_fallen;
 
-        if (detectionMode === 'override_compliant') {
-          finalHasHelmet = true;
-          finalHasVest = true;
-          finalIsFallen = false;
-        } else if (detectionMode === 'override_no_helmet') {
-          finalHasHelmet = false;
-        } else if (detectionMode === 'override_no_vest') {
-          finalHasVest = false;
-        } else if (detectionMode === 'override_fall') {
-          finalIsFallen = true;
-        }
+          if (detectionMode === 'override_compliant') {
+            finalHasHelmet = true;
+            finalHasVest = true;
+            finalIsFallen = false;
+          } else if (detectionMode === 'override_no_helmet') {
+            if (idx === 0) finalHasHelmet = false;
+          } else if (detectionMode === 'override_no_vest') {
+            if (idx === 0) finalHasVest = false;
+          } else if (detectionMode === 'override_fall') {
+            if (idx === 0) finalIsFallen = true;
+          }
 
-        const payloadCandidates = [
-          {
-            bbox: candidate.bbox,
-            confidence: candidate.confidence,
+          return {
+            bbox: cand.bbox,
+            confidence: cand.confidence,
             has_helmet: finalHasHelmet,
             has_vest: finalHasVest,
             is_fallen: finalIsFallen,
-          },
-        ];
+          };
+        });
 
-        // 3. Send real candidate to backend inference and MOT tracker
+        // 3. Send real candidates to backend inference and MOT tracker
         const resp: FrameInferenceResponse = await detectionService.inferFrame({
           camera_id: camera.id,
           trigger_incidents: true,
           simulated_detections: payloadCandidates,
+          environmental_hazards: hazards,
         });
 
         if (!isMounted) return;
 
         setTrackedWorkers(resp.tracked_workers);
         setActiveViolations(resp.violations_detected);
-        drawHud(resp.tracked_workers);
+        drawHud(resp.tracked_workers, hazards);
 
         if (resp.incident_created) {
+          const alertDesc =
+            resp.violations_detected.length > 0
+              ? resp.violations_detected.join(', ')
+              : hazards.join(', ');
           setIncidentAlert({
-            message: `New Incident Logged: ${resp.violations_detected.join(', ')}`,
+            message: `New Incident Logged: ${alertDesc}`,
             id: resp.incident_id || undefined,
           });
           setTimeout(() => setIncidentAlert(null), 5000);
@@ -390,6 +429,8 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
       videoRef.current.pause();
       setIsPaused(true);
       setTrackedWorkers([]);
+      setActiveViolations([]);
+      setActiveHazards([]);
       setHumanDetected(false);
       const canvas = canvasRef.current;
       if (canvas) {
@@ -457,6 +498,12 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {activeHazards.length > 0 && (
+            <span className="rounded bg-red-600/30 border border-red-500 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-red-300 flex items-center gap-1 animate-pulse">
+              <Flame className="size-3 text-red-400" />
+              {activeHazards.join(', ')}
+            </span>
+          )}
           {activeViolations.length > 0 && (
             <span className="rounded bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-red-400 flex items-center gap-1 animate-pulse">
               <AlertCircle className="size-3" />
@@ -492,10 +539,20 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>LIVE HARDWARE STREAM</span>
             {humanDetected && trackedWorkers.length > 0 ? (
-              <span className="text-emerald-400 border-l border-slate-700 pl-1.5 flex items-center gap-1 font-bold">
-                <UserCheck className="size-3 text-emerald-400" />
-                Worker #{trackedWorkers[0].track_id} •{' '}
-                {Math.round(trackedWorkers[0].confidence * 100)}%
+              <span className="text-emerald-400 border-l border-slate-700 pl-1.5 flex items-center gap-1.5 font-bold">
+                <Users className="size-3 text-emerald-400" />
+                <span>
+                  {trackedWorkers.length} {trackedWorkers.length === 1 ? 'Worker' : 'Workers'}{' '}
+                  Tracked
+                </span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+                  {trackedWorkers.filter((w) => w.status === 'compliant').length} OK
+                </span>
+                {trackedWorkers.some((w) => w.status !== 'compliant') && (
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-red-500/20 text-red-400">
+                    {trackedWorkers.filter((w) => w.status !== 'compliant').length} Alert
+                  </span>
+                )}
               </span>
             ) : humanDetected ? (
               <span className="text-emerald-400 border-l border-slate-700 pl-1.5 flex items-center gap-1 font-bold">
@@ -599,6 +656,17 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
           >
             Test: Fall
           </button>
+          <button
+            type="button"
+            onClick={() => setDetectionMode('override_fire')}
+            className={`px-1.5 py-0.5 rounded transition ${
+              detectionMode === 'override_fire'
+                ? 'bg-red-600/30 text-red-300 border border-red-500'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Test: Fire
+          </button>
         </div>
       </div>
 
@@ -637,6 +705,8 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
               setIsTrackingEnabled(next);
               if (!next) {
                 setTrackedWorkers([]);
+                setActiveViolations([]);
+                setActiveHazards([]);
                 setHumanDetected(false);
                 const canvas = canvasRef.current;
                 if (canvas) {
