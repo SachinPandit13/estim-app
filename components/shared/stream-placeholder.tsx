@@ -147,9 +147,21 @@ export function StreamPlaceholder({ camera, className }: StreamPlaceholderProps)
                 </span>
               )}
             </div>
-            <p className="mt-1 text-[11px] text-slate-400 font-mono">
-              {camera.location || 'Default Zone'} • CH {camera.dvr_channel ?? 1}
-            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+              <span>{camera.location || 'Default Zone'}</span>
+              <span>•</span>
+              <span className="text-amber-400/90 font-semibold">CH {camera.dvr_channel ?? 1}</span>
+              {camera.config?.subtype !== undefined && (
+                <>
+                  <span>•</span>
+                  <span className="text-blue-400">
+                    {camera.config.subtype === 1
+                      ? 'Sub Stream (subtype 1)'
+                      : 'Main Stream (subtype 0)'}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -179,7 +191,9 @@ export function StreamPlaceholder({ camera, className }: StreamPlaceholderProps)
         </div>
 
         <p className="font-mono text-xs text-slate-300 font-semibold tracking-wide">
-          RTSP INFERENCE PIPELINE ACTIVE
+          {camera.source_type === 'dvr'
+            ? 'INDUSTRIAL DVR/NVR PIPELINE'
+            : 'RTSP INFERENCE PIPELINE ACTIVE'}
         </p>
         <p
           className="mt-0.5 max-w-xs font-mono text-[11px] text-slate-500 truncate"
