@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -97,6 +97,23 @@ const secondaryNavItems: NavItem[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [unreadNotifs, setUnreadNotifs] = useState<number>(0);
+
+  useEffect(() => {
+    const handleCountChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ unreadCount?: number }>;
+      if (typeof customEvent.detail?.unreadCount === 'number') {
+        setUnreadNotifs(customEvent.detail.unreadCount);
+      }
+    };
+    const handleCleared = () => setUnreadNotifs(0);
+    window.addEventListener('notification-count-changed', handleCountChange);
+    window.addEventListener('notifications-cleared', handleCleared);
+    return () => {
+      window.removeEventListener('notification-count-changed', handleCountChange);
+      window.removeEventListener('notifications-cleared', handleCleared);
+    };
+  }, []);
 
   return (
     <Sidebar className="border-r border-border bg-slate-950 text-slate-100">
@@ -169,7 +186,12 @@ export function AppSidebar() {
                       }`}
                     >
                       <item.icon className="size-4 shrink-0" />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.href === '/notifications' && unreadNotifs > 0 && (
+                        <span className="flex size-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white font-mono">
+                          {unreadNotifs > 9 ? '9+' : unreadNotifs}
+                        </span>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
