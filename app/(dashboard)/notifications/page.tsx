@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, CheckCheck, Check, Clock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Bell, CheckCheck, Check, Clock, ArrowRight, AlertTriangle, RotateCcw } from 'lucide-react';
 import type { NotificationItem } from '@/types/api';
 
 export default function NotificationsPage() {
@@ -22,6 +22,10 @@ export default function NotificationsPage() {
     try {
       const data = await apiClient<NotificationItem[]>('/notifications?limit=50');
       setNotifications(data);
+      const unread = data.filter((n) => !n.is_read).length;
+      window.dispatchEvent(
+        new CustomEvent('notification-count-changed', { detail: { unreadCount: unread } }),
+      );
       setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load notifications');
@@ -34,13 +38,49 @@ export default function NotificationsPage() {
 
   const handleMarkRead = async (id: string) => {
     setActionInProgress(id);
+    // Optimistic update
+    setNotifications((prev) => {
+      const next = prev.map((n) =>
+        n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n,
+      );
+      const newUnread = next.filter((n) => !n.is_read).length;
+      window.dispatchEvent(
+        new CustomEvent('notification-count-changed', { detail: { unreadCount: newUnread } }),
+      );
+      return next;
+    });
+
     try {
       await apiClient<NotificationItem>(`/notifications/${id}/read`, {
         method: 'PATCH',
       });
-      await fetchNotifications();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Failed to mark as read');
+      await fetchNotifications();
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleMarkUnread = async (id: string) => {
+    setActionInProgress(id);
+    // Optimistic update
+    setNotifications((prev) => {
+      const next = prev.map((n) => (n.id === id ? { ...n, is_read: false, read_at: null } : n));
+      const newUnread = next.filter((n) => !n.is_read).length;
+      window.dispatchEvent(
+        new CustomEvent('notification-count-changed', { detail: { unreadCount: newUnread } }),
+      );
+      return next;
+    });
+
+    try {
+      await apiClient<NotificationItem>(`/notifications/${id}/unread`, {
+        method: 'PATCH',
+      });
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to mark as unread');
+      await fetchNotifications();
     } finally {
       setActionInProgress(null);
     }
@@ -48,13 +88,22 @@ export default function NotificationsPage() {
 
   const handleMarkAllRead = async () => {
     setActionInProgress('all');
+    // Optimistic update
+    setNotifications((prev) => {
+      const next = prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() }));
+      window.dispatchEvent(
+        new CustomEvent('notification-count-changed', { detail: { unreadCount: 0 } }),
+      );
+      return next;
+    });
+
     try {
       await apiClient<{ updated_count: number }>('/notifications/read-all', {
         method: 'PATCH',
       });
-      await fetchNotifications();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Failed to mark all as read');
+      await fetchNotifications();
     } finally {
       setActionInProgress(null);
     }
@@ -183,16 +232,29 @@ export default function NotificationsPage() {
                   </Link>
                 )}
 
-                {!item.is_read && (
+                {!item.is_read ? (
                   <Button
                     size="xs"
                     variant="outline"
                     disabled={actionInProgress === item.id}
                     onClick={() => handleMarkRead(item.id)}
-                    className="h-7 text-xs font-mono gap-1"
+                    className="h-7 text-xs font-mono gap-1 hover:border-emerald-500/50 hover:text-emerald-500"
                     title="Mark as Read"
                   >
                     <Check className="size-3" />
+                    <span className="hidden sm:inline">Mark Read</span>
+                  </Button>
+                ) : (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    disabled={actionInProgress === item.id}
+                    onClick={() => handleMarkUnread(item.id)}
+                    className="h-7 text-xs font-mono gap-1 text-muted-foreground hover:text-amber-500"
+                    title="Mark as Unread"
+                  >
+                    <RotateCcw className="size-3" />
+                    <span className="hidden sm:inline">Mark Unread</span>
                   </Button>
                 )}
               </div>
