@@ -18,6 +18,7 @@ export default function LiveMonitoringPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [gridLayout, setGridLayout] = useState<'2' | '3' | '1'>('2');
+  const [connectingWebcam, setConnectingWebcam] = useState(false);
 
   const fetchCameras = async () => {
     try {
@@ -32,6 +33,33 @@ export default function LiveMonitoringPage() {
   };
 
   usePolling(fetchCameras, { intervalMs: 10000 });
+
+  const handleConnectLocalWebcam = async () => {
+    const existing = cameras.find((c) => c.source_type === 'webcam');
+    if (existing) {
+      alert(`Local device camera "${existing.name}" is already active in your camera feeds.`);
+      return;
+    }
+
+    setConnectingWebcam(true);
+    try {
+      await apiClient<Camera>('/cameras', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Local Device Webcam',
+          source_type: 'webcam',
+          stream_url: 'device://webcam',
+          location: 'Control Station',
+          is_enabled: true,
+        }),
+      });
+      await fetchCameras();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to register webcam feed');
+    } finally {
+      setConnectingWebcam(false);
+    }
+  };
 
   const filteredCameras = cameras.filter((cam) => {
     const matchesSearch =
@@ -56,8 +84,18 @@ export default function LiveMonitoringPage() {
           </p>
         </div>
 
-        {/* Layout Switcher */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto">
+        {/* Action Controls & Layout Switcher */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            size="sm"
+            onClick={handleConnectLocalWebcam}
+            disabled={connectingWebcam}
+            className="h-8 gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
+          >
+            <Video className="size-3.5" />
+            {connectingWebcam ? 'Connecting...' : 'Connect Device Cam'}
+          </Button>
+
           <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
             <button
               onClick={() => setGridLayout('1')}
@@ -122,7 +160,7 @@ export default function LiveMonitoringPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none font-mono"
+          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-hidden font-mono"
         >
           <option value="all">All Statuses</option>
           <option value="online">Online Only</option>
