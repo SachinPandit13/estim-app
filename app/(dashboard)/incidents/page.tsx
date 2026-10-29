@@ -147,7 +147,7 @@ export default function IncidentsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none font-mono"
+          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-hidden font-mono"
         >
           <option value="all">All Lifecycle</option>
           <option value="open">Open (Unacknowledged)</option>
@@ -158,7 +158,7 @@ export default function IncidentsPage() {
         <select
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value)}
-          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none font-mono"
+          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-hidden font-mono"
         >
           <option value="all">All Severities</option>
           <option value="critical">Critical</option>
@@ -304,7 +304,7 @@ export default function IncidentsPage() {
                 placeholder="e.g. Worker was alerted immediately and issued PPE safety helmet before resuming operation. Area checked."
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
-                className="w-full rounded-lg border border-border bg-card p-2 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-amber-500 font-sans"
+                className="w-full rounded-lg border border-border bg-card p-2 text-xs text-foreground placeholder:text-muted-foreground outline-hidden focus:border-amber-500 font-sans"
               />
             </div>
 
