@@ -2,7 +2,7 @@ export type Role = 'admin' | 'supervisor' | 'member';
 export type IncidentSeverity = 'critical' | 'high' | 'medium' | 'low';
 export type IncidentStatus = 'open' | 'acknowledged' | 'resolved';
 export type CameraStatus = 'online' | 'offline' | 'error';
-export type CameraSourceType = 'rtsp' | 'ip' | 'webcam' | 'usb';
+export type CameraSourceType = 'dvr' | 'rtsp' | 'ip' | 'webcam' | 'usb';
 
 export interface User {
   id: string;
@@ -44,9 +44,12 @@ export interface CameraCreateInput {
   description?: string;
   source_type?: string;
   stream_url?: string;
+  dvr_host?: string;
+  dvr_port?: number;
+  dvr_channel?: number;
+  subtype?: number;
   rtsp_username?: string;
   rtsp_password?: string;
-  dvr_channel?: number;
   location?: string;
   is_enabled?: boolean;
   config?: Record<string, unknown>;
