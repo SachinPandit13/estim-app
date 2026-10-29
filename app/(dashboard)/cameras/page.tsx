@@ -177,10 +177,59 @@ export default function CamerasPage() {
 
             <form onSubmit={handleSubmit} className="space-y-3 py-2">
               <div className="space-y-1">
+                <label className="text-xs font-medium">Source Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        source_type: 'rtsp',
+                        stream_url: '',
+                      })
+                    }
+                    className={`flex items-center justify-center gap-1.5 rounded-lg border p-2 text-xs font-medium transition-colors ${
+                      formData.source_type !== 'webcam'
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-semibold'
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Cctv className="size-3.5" />
+                    RTSP / IP Camera
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        source_type: 'webcam',
+                        stream_url: 'device://webcam',
+                        name: formData.name || 'System Device Webcam',
+                        location: formData.location || 'Local Workstation',
+                      })
+                    }
+                    className={`flex items-center justify-center gap-1.5 rounded-lg border p-2 text-xs font-medium transition-colors ${
+                      formData.source_type === 'webcam'
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-semibold'
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Activity className="size-3.5" />
+                    System Webcam
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
                 <label className="text-xs font-medium">Camera Name *</label>
                 <Input
                   required
-                  placeholder="e.g. Assembly Line North 01"
+                  placeholder={
+                    formData.source_type === 'webcam'
+                      ? 'e.g. Workstation Webcam'
+                      : 'e.g. Assembly Line North 01'
+                  }
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="h-8 text-xs"
@@ -197,52 +246,80 @@ export default function CamerasPage() {
                     className="h-8 text-xs"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">DVR Channel</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="64"
-                    value={formData.dvr_channel ?? 1}
-                    onChange={(e) =>
-                      setFormData({ ...formData, dvr_channel: Number(e.target.value) })
-                    }
-                    className="h-8 text-xs font-mono"
-                  />
-                </div>
+                {formData.source_type !== 'webcam' ? (
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">DVR Channel</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="64"
+                      value={formData.dvr_channel ?? 1}
+                      onChange={(e) =>
+                        setFormData({ ...formData, dvr_channel: Number(e.target.value) })
+                      }
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Device Type</label>
+                    <div className="h-8 flex items-center px-2 rounded-lg border border-border bg-muted/50 text-[11px] font-mono text-muted-foreground">
+                      USB / Integrated
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium">RTSP Stream URL</label>
-                <Input
-                  placeholder="rtsp://192.168.1.100:554/live/ch1"
-                  value={formData.stream_url || ''}
-                  onChange={(e) => setFormData({ ...formData, stream_url: e.target.value })}
-                  className="h-8 text-xs font-mono"
-                />
-              </div>
+              {formData.source_type !== 'webcam' ? (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">RTSP Stream URL</label>
+                    <Input
+                      placeholder="rtsp://192.168.1.100:554/live/ch1"
+                      value={formData.stream_url || ''}
+                      onChange={(e) => setFormData({ ...formData, stream_url: e.target.value })}
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">RTSP Username</label>
-                  <Input
-                    placeholder="Optional user"
-                    value={formData.rtsp_username || ''}
-                    onChange={(e) => setFormData({ ...formData, rtsp_username: e.target.value })}
-                    className="h-8 text-xs"
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">RTSP Username</label>
+                      <Input
+                        placeholder="Optional user"
+                        value={formData.rtsp_username || ''}
+                        onChange={(e) =>
+                          setFormData({ ...formData, rtsp_username: e.target.value })
+                        }
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">RTSP Password</label>
+                      <Input
+                        type="password"
+                        placeholder="Optional secret"
+                        value={formData.rtsp_password || ''}
+                        onChange={(e) =>
+                          setFormData({ ...formData, rtsp_password: e.target.value })
+                        }
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-mono text-amber-300">
+                  <div className="flex items-center gap-1.5 font-semibold text-amber-400">
+                    <Activity className="size-3.5" />
+                    Client Media Stream
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-300 leading-relaxed font-sans">
+                    This camera will stream directly from your browser device camera (built-in
+                    webcam or connected USB camera) for real-time safety inference.
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">RTSP Password</label>
-                  <Input
-                    type="password"
-                    placeholder="Optional secret"
-                    value={formData.rtsp_password || ''}
-                    onChange={(e) => setFormData({ ...formData, rtsp_password: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-xs font-medium">Description</label>
