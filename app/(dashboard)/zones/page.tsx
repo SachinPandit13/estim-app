@@ -235,7 +235,7 @@ export default function ZonesPage() {
         <select
           value={selectedCameraId}
           onChange={(e) => setSelectedCameraId(e.target.value)}
-          className="h-8 flex-1 sm:max-w-xs rounded-lg border border-border bg-background px-2.5 text-xs text-foreground outline-none font-mono"
+          className="h-8 flex-1 sm:max-w-xs rounded-lg border border-border bg-background px-2.5 text-xs text-foreground outline-hidden font-mono"
         >
           {cameras.map((c) => (
             <option key={c.id} value={c.id}>
