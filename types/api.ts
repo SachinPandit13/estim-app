@@ -162,6 +162,7 @@ export interface FrameInferenceRequest {
     has_vest?: boolean;
     is_fallen?: boolean;
   }>;
+  environmental_hazards?: string[];
 }
 
 export interface FrameInferenceResponse {
@@ -169,6 +170,7 @@ export interface FrameInferenceResponse {
   timestamp: string;
   tracked_workers: TrackedObject[];
   violations_detected: string[];
+  hazards_detected?: string[];
   incident_created: boolean;
   incident_id?: string | null;
   zone_alerts: string[];
