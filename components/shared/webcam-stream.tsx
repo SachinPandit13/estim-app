@@ -327,37 +327,26 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
         if (!isMounted) return;
         setActiveHazards(hazards);
 
-        // If no human body/face is present in camera view:
-        if (realCandidates.length === 0) {
-          missedFramesRef.current = 0;
-          setHumanDetected(false);
-          setTrackedWorkers([]);
-          setActiveViolations([]);
-
-          const canvas = canvasRef.current;
-          if (canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+        // 2. Capture downscaled frame for deep learning YOLO inference
+        let imageBase64: string | undefined = undefined;
+        try {
+          const offscreen = document.createElement('canvas');
+          const targetW = 640;
+          const vW = videoRef.current.videoWidth || 640;
+          const vH = videoRef.current.videoHeight || 480;
+          const targetH = Math.round((targetW / vW) * vH);
+          offscreen.width = targetW;
+          offscreen.height = targetH;
+          const offCtx = offscreen.getContext('2d');
+          if (offCtx) {
+            offCtx.drawImage(videoRef.current, 0, 0, targetW, targetH);
+            imageBase64 = offscreen.toDataURL('image/jpeg', 0.65);
           }
-          if (hazards.length > 0) {
-            drawHud([], hazards);
-          }
-
-          // Notify backend tracker that 0 workers are in view (no fallback)
-          await detectionService.inferFrame({
-            camera_id: camera.id,
-            trigger_incidents: hazards.length > 0,
-            simulated_detections: [],
-            environmental_hazards: hazards,
-          });
-          return;
+        } catch {
+          // Offscreen capture fallback
         }
 
-        // Real candidate present: reset missed frames counter
-        missedFramesRef.current = 0;
-        setHumanDetected(true);
-
-        // 2. Prepare payload candidates for all detected workers dynamically
+        // 3. Prepare payload candidates for all detected workers dynamically
         const payloadCandidates = realCandidates.map((cand, idx) => {
           let finalHasHelmet = cand.has_helmet;
           let finalHasVest = cand.has_vest;
@@ -384,9 +373,10 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
           };
         });
 
-        // 3. Send real candidates to backend inference and MOT tracker
+        // 4. Send frame and candidates to backend YOLO inference and MOT tracker
         const resp: FrameInferenceResponse = await detectionService.inferFrame({
           camera_id: camera.id,
+          image_base64: imageBase64,
           trigger_incidents: true,
           simulated_detections: payloadCandidates,
           environmental_hazards: hazards,
@@ -394,9 +384,28 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
 
         if (!isMounted) return;
 
-        setTrackedWorkers(resp.tracked_workers);
-        setActiveViolations(resp.violations_detected);
-        drawHud(resp.tracked_workers, hazards);
+        const workers = resp.tracked_workers || [];
+        if (workers.length > 0) {
+          missedFramesRef.current = 0;
+          setHumanDetected(true);
+          setTrackedWorkers(workers);
+          setActiveViolations(resp.violations_detected || []);
+          drawHud(workers, hazards);
+        } else {
+          missedFramesRef.current = 0;
+          setHumanDetected(false);
+          setTrackedWorkers([]);
+          setActiveViolations([]);
+
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          if (hazards.length > 0) {
+            drawHud([], hazards);
+          }
+        }
 
         if (resp.incident_created) {
           const alertDesc =
