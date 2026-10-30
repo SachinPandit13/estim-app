@@ -86,6 +86,7 @@ export function useSafetyWebSocket(options: UseSafetyWebSocketOptions = {}) {
                 onAlertRef.current(alertMsg);
               }
             }
+            // AI_HEALTH messages are available for consumers; ignore by default here
           } catch {
             // Ignore non-json or ping/pong messages
           }
