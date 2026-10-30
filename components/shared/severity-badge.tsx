@@ -17,13 +17,13 @@ export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
         <Badge
           variant="outline"
           className={cn(
-            'gap-1.5 border-red-500/30 bg-red-500/10 text-red-600 font-semibold dark:text-red-400 font-mono text-[11px] uppercase tracking-wider',
+            'gap-1.5 border-danger/40 bg-danger-muted text-danger font-semibold font-mono text-[11px] uppercase tracking-wider',
             className,
           )}
         >
           <span className="relative flex size-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-red-600" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-danger" />
           </span>
           Critical
         </Badge>
@@ -33,11 +33,11 @@ export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
         <Badge
           variant="outline"
           className={cn(
-            'gap-1.5 border-amber-500/30 bg-amber-500/10 text-amber-700 font-semibold dark:text-amber-400 font-mono text-[11px] uppercase tracking-wider',
+            'gap-1.5 border-warning/40 bg-warning-muted text-warning font-semibold font-mono text-[11px] uppercase tracking-wider',
             className,
           )}
         >
-          <span className="size-1.5 rounded-full bg-amber-600 shrink-0" />
+          <span className="size-1.5 rounded-full bg-warning shrink-0" />
           High
         </Badge>
       );
@@ -46,11 +46,11 @@ export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
         <Badge
           variant="outline"
           className={cn(
-            'gap-1.5 border-yellow-500/30 bg-yellow-500/10 text-yellow-800 font-medium dark:text-yellow-400 font-mono text-[11px] uppercase tracking-wider',
+            'gap-1.5 border-warning/25 bg-warning-muted/60 text-warning font-medium font-mono text-[11px] uppercase tracking-wider',
             className,
           )}
         >
-          <span className="size-1.5 rounded-full bg-yellow-500 shrink-0" />
+          <span className="size-1.5 rounded-full bg-warning/80 shrink-0" />
           Medium
         </Badge>
       );
@@ -60,11 +60,11 @@ export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
         <Badge
           variant="outline"
           className={cn(
-            'gap-1.5 border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider',
+            'gap-1.5 border-border bg-surface-raised text-subtle font-mono text-[11px] uppercase tracking-wider',
             className,
           )}
         >
-          <span className="size-1.5 rounded-full bg-slate-400 shrink-0" />
+          <span className="size-1.5 rounded-full bg-muted shrink-0" />
           Low
         </Badge>
       );
