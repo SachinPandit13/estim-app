@@ -9,6 +9,7 @@ import { apiClient } from '@/lib/api-client';
 import type { NotificationItem } from '@/types/api';
 import { usePolling } from '@/hooks/use-polling';
 import { useSafetyWebSocket, type SafetyAlertMessage } from '@/hooks/use-safety-websocket';
+import { useEstimUi } from '@/store/estim-ui-store';
 
 const routeTitles: Record<string, string> = {
   '/': 'System Overview',
@@ -26,6 +27,7 @@ const routeTitles: Record<string, string> = {
 export function AppHeader() {
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const { pushToast } = useEstimUi();
 
   // Fetch exact unread notification count
   const fetchUnread = useCallback(async () => {
@@ -45,10 +47,19 @@ export function AppHeader() {
 
   usePolling(fetchUnread, { intervalMs: 15000 });
 
-  // Real-time WebSocket Alert Listener - increments badge dynamically
-  const handleSafetyAlert = useCallback((_alert: SafetyAlertMessage) => {
-    setUnreadCount((prev) => prev + 1);
-  }, []);
+  // Real-time WebSocket Alert Listener - increments badge dynamically and presents alert toast
+  const handleSafetyAlert = useCallback(
+    (alert: SafetyAlertMessage) => {
+      setUnreadCount((prev) => prev + 1);
+      const isCritical = alert.severity === 'critical' || alert.severity === 'high';
+      pushToast({
+        title: alert.title || 'Live Safety Detection Alert',
+        description: alert.message,
+        variant: isCritical ? 'error' : 'warning',
+      });
+    },
+    [pushToast],
+  );
 
   const { isConnected } = useSafetyWebSocket({
     onAlert: handleSafetyAlert,
