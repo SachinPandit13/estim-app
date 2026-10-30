@@ -116,31 +116,31 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <Sidebar className="border-r border-border bg-slate-950 text-slate-100">
-      <SidebarHeader className="border-b border-slate-900 px-4 py-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500 text-slate-950 font-bold shadow-sm">
+    <Sidebar className="border-r border-border bg-surface text-foreground transition-colors duration-150">
+      <SidebarHeader className="border-b border-border px-4 py-4">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-brand text-brand-foreground font-bold shadow-sm transition-transform duration-150 group-hover:scale-105">
             <ShieldCheck className="size-5" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-heading text-base font-bold tracking-wider text-slate-100">
+            <span className="font-heading text-base font-bold tracking-wider text-foreground">
               ESTIM
             </span>
-            <span className="text-[10px] uppercase font-mono text-amber-400/90 tracking-widest mt-0.5">
+            <span className="text-[10px] uppercase font-mono text-brand font-medium tracking-widest mt-0.5">
               Worker Safety AI
             </span>
           </div>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-3">
+      <SidebarContent className="px-2.5 py-3.5 space-y-4">
         {/* Real-time Monitoring Group */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase font-mono tracking-wider text-slate-400 px-3 mb-1">
+          <SidebarGroupLabel className="text-[10px] uppercase font-mono font-semibold tracking-wider text-muted px-2.5 mb-1.5">
             Monitoring
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {mainNavItems.map((item) => {
                 const isActive =
                   item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
@@ -149,10 +149,10 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       render={<Link href={item.href} />}
-                      className={`gap-3 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
+                      className={`gap-3 px-3 py-2 text-sm rounded-[9px] transition-[background-color,color] font-medium duration-120 ${
                         isActive
-                          ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300'
-                          : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
+                          ? 'bg-brand-muted text-brand font-semibold hover:bg-brand-muted hover:text-brand'
+                          : 'text-subtle hover:bg-surface-raised hover:text-foreground'
                       }`}
                     >
                       <item.icon className="size-4 shrink-0" />
@@ -165,13 +165,13 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Management & Analytics Group */}
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="text-[10px] uppercase font-mono tracking-wider text-slate-400 px-3 mb-1">
+        {/* Management & Administration Group */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] uppercase font-mono font-semibold tracking-wider text-muted px-2.5 mb-1.5">
             Administration
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {secondaryNavItems.map((item) => {
                 const isActive = pathname.startsWith(item.href);
                 return (
@@ -179,16 +179,16 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       render={<Link href={item.href} />}
-                      className={`gap-3 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
+                      className={`gap-3 px-3 py-2 text-sm rounded-[9px] transition-[background-color,color] font-medium duration-120 ${
                         isActive
-                          ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300'
-                          : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
+                          ? 'bg-brand-muted text-brand font-semibold hover:bg-brand-muted hover:text-brand'
+                          : 'text-subtle hover:bg-surface-raised hover:text-foreground'
                       }`}
                     >
                       <item.icon className="size-4 shrink-0" />
                       <span className="flex-1">{item.title}</span>
                       {item.href === '/notifications' && unreadNotifs > 0 && (
-                        <span className="flex size-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white font-mono">
+                        <span className="flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-danger-foreground font-mono">
                           {unreadNotifs > 9 ? '9+' : unreadNotifs}
                         </span>
                       )}
@@ -201,20 +201,21 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-900 p-3">
-        <div className="flex items-center justify-between rounded-lg bg-slate-900/60 p-2.5">
+      <SidebarFooter className="border-t border-border p-3">
+        <div className="flex items-center justify-between rounded-[10px] border border-border bg-surface-raised p-2.5">
           <div className="flex flex-col min-w-0 pr-2">
-            <span className="truncate text-xs font-medium text-slate-200">
+            <span className="truncate text-xs font-semibold text-foreground">
               {user?.full_name || user?.email || 'Supervisor'}
             </span>
-            <span className="text-[10px] uppercase font-mono text-slate-400 truncate">
+            <span className="text-[10px] uppercase font-mono text-muted truncate">
               {user?.role || 'Member'}
             </span>
           </div>
           <button
+            type="button"
             onClick={logout}
             title="Log Out"
-            className="flex size-7 items-center justify-center rounded text-slate-400 hover:bg-slate-800 hover:text-red-400 transition-colors"
+            className="flex size-7 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-danger transition-colors"
           >
             <LogOut className="size-3.5" />
           </button>
