@@ -22,6 +22,8 @@ export interface UserCreateInput {
   password?: string;
 }
 
+export type AiState = 'OFFLINE' | 'PROCESSING' | 'LIVE' | 'DEGRADED';
+
 export interface Camera {
   id: string;
   name: string;
@@ -37,6 +39,41 @@ export interface Camera {
   config?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  dvr_host?: string | null;
+  dvr_port?: number | null;
+  subtype?: number | null;
+  rtsp_username?: string | null;
+  ai_state?: AiState | string | null;
+}
+
+export interface CameraUpdateInput {
+  name?: string;
+  description?: string;
+  source_type?: string;
+  stream_url?: string;
+  dvr_host?: string;
+  dvr_port?: number;
+  dvr_channel?: number;
+  subtype?: number;
+  rtsp_username?: string;
+  rtsp_password?: string;
+  location?: string;
+  is_enabled?: boolean;
+  config?: Record<string, unknown>;
+}
+
+export interface CameraAiHealth {
+  camera_id: string;
+  ai_state: AiState | string;
+  worker_alive: boolean;
+  processing: boolean;
+  last_inference_at?: string | null;
+  last_frame_at?: string | null;
+  fps_actual?: number | null;
+  inference_ms?: number | null;
+  reconnect_count: number;
+  last_error?: string | null;
+  models_ready: Record<string, boolean>;
 }
 
 export interface CameraCreateInput {
@@ -141,6 +178,8 @@ export interface DbPoolStatus {
   message: string;
 }
 
+export type PpeStatus = 'compliant' | 'violation' | 'unknown';
+
 export interface TrackedObject {
   track_id: number;
   class_name: string;
@@ -149,6 +188,9 @@ export interface TrackedObject {
   has_helmet: boolean;
   has_vest: boolean;
   is_fallen: boolean;
+  helmet_status?: PpeStatus | string;
+  vest_status?: PpeStatus | string;
+  pose_status?: string;
   violation_type?: string | null;
   current_zone_name?: string | null;
   status: 'compliant' | 'warning' | 'violation';
