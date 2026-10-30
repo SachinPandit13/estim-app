@@ -22,6 +22,27 @@ export interface FrameAnalysisResult {
   hazards: string[];
 }
 
+/** OpenCV-like H 0-179, S/V 0-255 */
+function rgbToHsv(r: number, g: number, b: number): { h: number; s: number; v: number } {
+  const rf = r / 255;
+  const gf = g / 255;
+  const bf = b / 255;
+  const cmax = Math.max(rf, gf, bf);
+  const cmin = Math.min(rf, gf, bf);
+  const delta = cmax - cmin;
+  let h = 0;
+  if (delta > 1e-6) {
+    if (cmax === rf) h = ((gf - bf) / delta) % 6;
+    else if (cmax === gf) h = (bf - rf) / delta + 2;
+    else h = (rf - gf) / delta + 4;
+    h *= 30;
+    if (h < 0) h += 180;
+  }
+  const s = cmax > 1e-6 ? (delta / cmax) * 255 : 0;
+  const v = cmax * 255;
+  return { h, s, v };
+}
+
 interface MaskComponent {
   cells: number[];
   minGx: number;
@@ -305,25 +326,25 @@ export class RealVisionDetector {
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
+          const { h, s, v } = rgbToHsv(r, g, b);
+          const isSkin = r > 60 && g > 30 && b > 15 && r > g && r > b && r - g > 10;
+          if (isSkin) continue;
 
-          // A. Industrial High-Vis Yellow / Neon Lime Hardhat
-          const isYellowHardhat = r > 130 && g > 130 && b < 100 && (r + g) / (2 * (b + 1)) > 1.35;
-          // B. Industrial Safety Orange Hardhat
-          const isOrangeHardhat = r > 165 && g >= 55 && g <= 145 && b < 75 && r - g > 35;
-          // C. Construction White Hardhat
-          const isWhiteHardhat =
-            r > 195 && g > 195 && b > 195 && Math.abs(r - g) < 18 && Math.abs(g - b) < 18;
-          // D. Industrial Blue Hardhat
-          const isBlueHardhat = b > 135 && b > r + 35 && b > g + 20;
+          // Saturated industrial hardhat only — plain white walls excluded (high FP)
+          const isYellowHardhat = h >= 20 && h <= 45 && s >= 90 && v >= 120;
+          const isOrangeHardhat = (h <= 18 || h >= 170) && s >= 100 && v >= 110 && r > g + 25;
+          const isBlueHardhat =
+            h >= 90 && h <= 130 && s >= 80 && v >= 80 && b > r + 25 && b > g + 15;
 
-          if (isYellowHardhat || isOrangeHardhat || isWhiteHardhat || isBlueHardhat) {
+          if (isYellowHardhat || isOrangeHardhat || isBlueHardhat) {
             helmetPixelCount++;
           }
         }
       }
 
       const helmetRatio = totalHelmetRoiPixels > 0 ? helmetPixelCount / totalHelmetRoiPixels : 0;
-      const hasHelmet = helmetRatio >= 0.14;
+      // High bar for OK — bare heads must not pass
+      const hasHelmet = helmetRatio >= 0.22;
 
       // 10. Individual High-Visibility Safety Vest Inspection in Torso ROI
       const torsoRoiY1 = Math.min(sh, Math.floor(headY2 + headH * 0.05));
@@ -341,23 +362,28 @@ export class RealVisionDetector {
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
+          const { h, s, v } = rgbToHsv(r, g, b);
 
-          // A. Fluorescent Hi-Vis Yellow / Green Fabric (EN ISO 20471 standard)
-          const isHiVisYellow = r > 120 && g > 140 && g > b + 35 && b < 125;
-          // B. Fluorescent Hi-Vis Safety Orange Fabric
-          const isHiVisOrange = r > 165 && g >= 55 && g <= 135 && b < 75 && r - g > 40;
-          // C. Reflective Silver / High-Reflective Stripes on Vest
-          const isReflectiveStripe =
-            r > 215 && g > 215 && b > 215 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15;
+          // Fluorescent hi-vis only — brown/tan shirts must not match
+          const isHiVisYellow =
+            h >= 28 && h <= 75 && s >= 130 && v >= 130 && g >= 150 && g >= r && g > b + 35;
+          const isHiVisOrange =
+            (h <= 12 || h >= 172) &&
+            s >= 170 &&
+            v >= 160 &&
+            r >= 190 &&
+            g <= 120 &&
+            b <= 80 &&
+            r > g + 60;
 
-          if (isHiVisYellow || isHiVisOrange || isReflectiveStripe) {
+          if (isHiVisYellow || isHiVisOrange) {
             vestPixelCount++;
           }
         }
       }
 
       const vestRatio = totalTorsoRoiPixels > 0 ? vestPixelCount / totalTorsoRoiPixels : 0;
-      const hasVest = vestRatio >= 0.12;
+      const hasVest = vestRatio >= 0.18;
 
       // 11. Strict Posture & Floor-Level Fall Analysis
       // Real fall: worker must be horizontally prone on or near the floor
