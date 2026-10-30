@@ -36,8 +36,25 @@ import {
   Eye,
   EyeOff,
   Radio,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import type { Camera, CameraCreateInput, CameraTestResult } from '@/types/api';
+
+const emptyForm = (): CameraCreateInput => ({
+  name: '',
+  description: '',
+  location: '',
+  source_type: 'dvr',
+  stream_url: '',
+  dvr_host: '192.168.1.2',
+  dvr_port: 554,
+  dvr_channel: 1,
+  subtype: 0,
+  rtsp_username: 'admin',
+  rtsp_password: '',
+  is_enabled: true,
+});
 
 export default function CamerasPage() {
   const [cameras, setCameras] = useState<Camera[]>([]);
@@ -45,6 +62,7 @@ export default function CamerasPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -54,21 +72,7 @@ export default function CamerasPage() {
     success: boolean;
   } | null>(null);
 
-  // Form State with Dynamic DVR standard defaults
-  const [formData, setFormData] = useState<CameraCreateInput>({
-    name: '',
-    description: '',
-    location: '',
-    source_type: 'dvr',
-    stream_url: '',
-    dvr_host: '192.168.1.2',
-    dvr_port: 554,
-    dvr_channel: 1,
-    subtype: 0,
-    rtsp_username: 'admin',
-    rtsp_password: '',
-    is_enabled: true,
-  });
+  const [formData, setFormData] = useState<CameraCreateInput>(emptyForm);
 
   const fetchCameras = async () => {
     try {
@@ -121,37 +125,71 @@ export default function CamerasPage() {
     }
   };
 
+  const openCreate = () => {
+    setEditingId(null);
+    setFormData(emptyForm());
+    setIsDialogOpen(true);
+  };
+
+  const openEdit = (camera: Camera) => {
+    setEditingId(camera.id);
+    setFormData({
+      name: camera.name,
+      description: camera.description || '',
+      location: camera.location || '',
+      source_type: camera.source_type || 'dvr',
+      stream_url: camera.stream_url || '',
+      dvr_host: camera.dvr_host || (camera.config?.dvr_host as string) || '192.168.1.2',
+      dvr_port: camera.dvr_port ?? (camera.config?.dvr_port as number) ?? 554,
+      dvr_channel: camera.dvr_channel ?? 1,
+      subtype: camera.subtype ?? (camera.config?.subtype as number) ?? 0,
+      rtsp_username: camera.rtsp_username || 'admin',
+      rtsp_password: '',
+      is_enabled: camera.is_enabled,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete camera "${name}"? Historical incidents are kept.`)) return;
+    setActionInProgress(id);
+    try {
+      await apiClient(`/cameras/${id}`, { method: 'DELETE' });
+      await fetchCameras();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    const body = {
+      ...formData,
+      dvr_channel: formData.dvr_channel ? Number(formData.dvr_channel) : 1,
+      dvr_port: formData.dvr_port ? Number(formData.dvr_port) : 554,
+      subtype: formData.subtype !== undefined ? Number(formData.subtype) : 0,
+    };
     try {
-      await apiClient<Camera>('/cameras', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          dvr_channel: formData.dvr_channel ? Number(formData.dvr_channel) : 1,
-          dvr_port: formData.dvr_port ? Number(formData.dvr_port) : 554,
-          subtype: formData.subtype !== undefined ? Number(formData.subtype) : 0,
-        }),
-      });
+      if (editingId) {
+        await apiClient<Camera>(`/cameras/${editingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        });
+      } else {
+        await apiClient<Camera>('/cameras', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+      }
       setIsDialogOpen(false);
-      setFormData({
-        name: '',
-        description: '',
-        location: '',
-        source_type: 'dvr',
-        stream_url: '',
-        dvr_host: '192.168.1.2',
-        dvr_port: 554,
-        dvr_channel: 1,
-        subtype: 0,
-        rtsp_username: 'admin',
-        rtsp_password: '',
-        is_enabled: true,
-      });
+      setEditingId(null);
+      setFormData(emptyForm());
       await fetchCameras();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to register camera');
+      alert(err instanceof Error ? err.message : 'Failed to save camera');
     } finally {
       setSubmitting(false);
     }
@@ -184,10 +222,16 @@ export default function CamerasPage() {
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) setEditingId(null);
+          }}
+        >
           <Button
             size="sm"
-            onClick={() => setIsDialogOpen(true)}
+            onClick={openCreate}
             className="h-8 gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
           >
             <Plus className="size-3.5" />
@@ -197,11 +241,12 @@ export default function CamerasPage() {
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-base font-semibold">
-                Register New Camera Stream
+                {editingId ? 'Edit Camera Stream' : 'Register New Camera Stream'}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Configure an Industrial DVR/NVR stream, custom RTSP IP camera, or local device
-                camera.
+                {editingId
+                  ? 'Update DVR/RTSP parameters. Leave password blank to keep the existing secret.'
+                  : 'Configure an Industrial DVR/NVR stream, custom RTSP IP camera, or local device camera.'}
               </DialogDescription>
             </DialogHeader>
 
@@ -505,7 +550,7 @@ export default function CamerasPage() {
                   size="sm"
                   className="h-8 text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
                 >
-                  {submitting ? 'Registering...' : 'Save Camera'}
+                  {submitting ? 'Saving...' : editingId ? 'Update Camera' : 'Save Camera'}
                 </Button>
               </DialogFooter>
             </form>
@@ -548,7 +593,7 @@ export default function CamerasPage() {
           title="No cameras registered"
           description="Register your industrial facility DVR/NVR or RTSP streams to activate real-time AI safety monitoring."
           actionLabel="Add Camera"
-          onAction={() => setIsDialogOpen(true)}
+          onAction={openCreate}
         />
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -600,7 +645,12 @@ export default function CamerasPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={camera.status} />
+                    <div className="flex flex-col gap-1">
+                      <StatusBadge status={camera.status} />
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        AI {camera.ai_state || 'OFFLINE'}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span
@@ -627,6 +677,17 @@ export default function CamerasPage() {
                         size="xs"
                         variant="outline"
                         disabled={actionInProgress === camera.id}
+                        onClick={() => openEdit(camera)}
+                        className="h-7 text-xs font-mono gap-1"
+                        title="Edit camera / DVR settings"
+                      >
+                        <Pencil className="size-3 text-muted-foreground" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={actionInProgress === camera.id}
                         onClick={() => handleTest(camera.id)}
                         className="h-7 text-xs font-mono gap-1"
                         title="Test TCP Socket / Connectivity"
@@ -647,6 +708,16 @@ export default function CamerasPage() {
                       >
                         <Power className="size-3" />
                         {camera.is_enabled ? 'Disable' : 'Enable'}
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={actionInProgress === camera.id}
+                        onClick={() => handleDelete(camera.id, camera.name)}
+                        className="h-7 text-xs font-mono gap-1 hover:bg-red-500/10 hover:text-red-600"
+                        title="Delete camera"
+                      >
+                        <Trash2 className="size-3" />
                       </Button>
                     </div>
                   </TableCell>
