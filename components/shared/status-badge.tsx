@@ -20,37 +20,33 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className, label }: StatusBadgeProps) {
-  const normalized = status.toLowerCase() as SystemStatus;
+  const normalized = (status || '').toLowerCase() as SystemStatus;
 
-  let dotColor = 'bg-muted-foreground';
-  let badgeClasses = 'bg-secondary text-secondary-foreground border-border';
-  let displayLabel = label || status;
+  let dotColor = 'bg-muted';
+  let badgeClasses = 'bg-surface-raised text-subtle border-border';
+  const displayLabel = label || status;
 
   switch (normalized) {
     case 'online':
     case 'active':
     case 'resolved':
-      dotColor = 'bg-emerald-500';
-      badgeClasses =
-        'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
+      dotColor = 'bg-success';
+      badgeClasses = 'bg-success-muted text-success border-success/30';
       break;
     case 'offline':
     case 'inactive':
-      dotColor = 'bg-zinc-400';
-      badgeClasses =
-        'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800/50 dark:text-zinc-400 dark:border-zinc-700';
+      dotColor = 'bg-muted';
+      badgeClasses = 'bg-surface-raised text-muted border-border';
       break;
     case 'warning':
     case 'acknowledged':
-      dotColor = 'bg-amber-500';
-      badgeClasses =
-        'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
+      dotColor = 'bg-warning';
+      badgeClasses = 'bg-warning-muted text-warning border-warning/30';
       break;
     case 'error':
     case 'open':
-      dotColor = 'bg-red-500';
-      badgeClasses =
-        'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800';
+      dotColor = 'bg-danger';
+      badgeClasses = 'bg-danger-muted text-danger border-danger/30';
       break;
   }
 
