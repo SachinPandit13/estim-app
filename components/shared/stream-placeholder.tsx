@@ -15,7 +15,13 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { WebcamStreamPlayer } from '@/components/shared/webcam-stream';
-import type { Camera, CameraTestResult, TrackedObject, FrameInferenceResponse } from '@/types/api';
+import type {
+  Camera,
+  CameraTestResult,
+  CameraAiHealth,
+  TrackedObject,
+  FrameInferenceResponse,
+} from '@/types/api';
 import { detectionService } from '@/lib/detection-service';
 
 interface StreamPlaceholderProps {
@@ -46,6 +52,28 @@ export function StreamPlaceholder({ camera, className }: StreamPlaceholderProps)
   const [activeViolations, setActiveViolations] = useState<string[]>([]);
   const [simMode, setSimMode] = useState<SimulationViolationMode>('normal');
   const [incidentAlert, setIncidentAlert] = useState<{ message: string; id?: string } | null>(null);
+  const [aiHealth, setAiHealth] = useState<CameraAiHealth | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const poll = async () => {
+      try {
+        const h = await apiClient<CameraAiHealth>(`/cameras/${camera.id}/ai-health`);
+        if (mounted) setAiHealth(h);
+      } catch {
+        if (mounted) setAiHealth(null);
+      }
+    };
+    poll();
+    const t = setInterval(poll, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(t);
+    };
+  }, [camera.id]);
+
+  const aiLabel = aiHealth?.ai_state || camera.ai_state || 'OFFLINE';
+  const aiLive = aiLabel === 'LIVE' || aiLabel === 'PROCESSING';
 
   const runTest = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -140,12 +168,16 @@ export function StreamPlaceholder({ camera, className }: StreamPlaceholderProps)
               <h4 className="font-heading text-sm font-semibold text-slate-100 leading-none">
                 {camera.name}
               </h4>
-              {isTrackingEnabled && (
-                <span className="rounded bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase text-emerald-400 flex items-center gap-1">
-                  <Activity className="size-2.5 animate-pulse" />
-                  AI TRACKING ON
-                </span>
-              )}
+              <span
+                className={`rounded border px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase flex items-center gap-1 ${
+                  aiLive
+                    ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                    : 'bg-slate-500/20 border-slate-500/30 text-slate-400'
+                }`}
+              >
+                {aiLive && <Activity className="size-2.5 animate-pulse" />}
+                AI {aiLabel}
+              </span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
               <span>{camera.location || 'Default Zone'}</span>
@@ -218,9 +250,21 @@ export function StreamPlaceholder({ camera, className }: StreamPlaceholderProps)
               >
                 <span className="font-bold">Worker #{w.track_id}</span>
                 <span className="text-slate-400">•</span>
-                <span>{w.has_helmet ? '⛑️ Helmet' : '❌ NO HELMET'}</span>
-                <span>{w.has_vest ? '🦺 Vest' : '❌ NO VEST'}</span>
-                {w.is_fallen && <span className="font-bold text-red-400">🚨 FALL</span>}
+                <span>
+                  {w.helmet_status === 'compliant'
+                    ? 'Helmet OK'
+                    : w.helmet_status === 'unknown'
+                      ? 'Helmet ?'
+                      : 'NO HELMET'}
+                </span>
+                <span>
+                  {w.vest_status === 'compliant'
+                    ? 'Vest OK'
+                    : w.vest_status === 'unknown'
+                      ? 'Vest ?'
+                      : 'NO VEST'}
+                </span>
+                {w.is_fallen && <span className="font-bold text-red-400">FALL</span>}
                 {w.current_zone_name && (
                   <span className="font-bold text-red-400">⛔ {w.current_zone_name}</span>
                 )}
