@@ -267,21 +267,24 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
         ctx.fillStyle = strokeColor;
         ctx.fillText(headerText, x + 8, Math.max(0, y - badgeH - 4) + 14);
 
-        // 4. PPE / Violation Indicator Tags
-        const tags: { text: string; ok: boolean }[] = [];
-        tags.push({
-          text: worker.has_helmet ? '⛑️ Helmet: OK' : '⛑️ NO HELMET',
-          ok: worker.has_helmet,
-        });
-        tags.push({
-          text: worker.has_vest ? '🦺 Vest: OK' : '🦺 NO VEST',
-          ok: worker.has_vest,
-        });
+        // 4. PPE / Violation Indicator Tags — only green OK when status is explicitly compliant
+        const helmetStatus =
+          worker.helmet_status || (worker.has_helmet ? 'compliant' : 'violation');
+        const vestStatus = worker.vest_status || (worker.has_vest ? 'compliant' : 'violation');
+        const ppeTag = (kind: 'Helmet' | 'Vest', status: string) => {
+          if (status === 'compliant') return { text: `${kind}: OK`, tone: 'ok' as const };
+          if (status === 'unknown') return { text: `${kind}: ?`, tone: 'unknown' as const };
+          return { text: `NO ${kind.toUpperCase()}`, tone: 'bad' as const };
+        };
+        const tags: { text: string; tone: 'ok' | 'bad' | 'unknown' }[] = [
+          ppeTag('Helmet', helmetStatus),
+          ppeTag('Vest', vestStatus),
+        ];
         if (worker.is_fallen) {
-          tags.push({ text: '🚨 FALL DETECTED', ok: false });
+          tags.push({ text: 'FALL DETECTED', tone: 'bad' });
         }
         if (worker.current_zone_name) {
-          tags.push({ text: `⛔ ${worker.current_zone_name}`, ok: false });
+          tags.push({ text: `${worker.current_zone_name}`, tone: 'bad' });
         }
 
         let tagY = y + 16;
@@ -291,7 +294,12 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
           const tW = tm.width + 12;
           const tH = 18;
 
-          ctx.fillStyle = tag.ok ? 'rgba(16, 185, 129, 0.85)' : 'rgba(239, 68, 68, 0.85)';
+          ctx.fillStyle =
+            tag.tone === 'ok'
+              ? 'rgba(16, 185, 129, 0.85)'
+              : tag.tone === 'unknown'
+                ? 'rgba(245, 158, 11, 0.9)'
+                : 'rgba(239, 68, 68, 0.85)';
           ctx.fillRect(x + 6, tagY, tW, tH);
           ctx.fillStyle = '#ffffff';
           ctx.fillText(tag.text, x + 12, tagY + 13);
@@ -497,12 +505,18 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
               <span className="rounded bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase text-amber-400">
                 Local Device
               </span>
-              {isTrackingEnabled && (
-                <span className="rounded bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase text-emerald-400 flex items-center gap-1">
+              <span
+                className={`rounded border px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase flex items-center gap-1 ${
+                  isTrackingEnabled && !error && !isPaused
+                    ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                    : 'bg-slate-500/20 border-slate-500/30 text-slate-400'
+                }`}
+              >
+                {isTrackingEnabled && !error && !isPaused && (
                   <Activity className="size-2.5 animate-pulse" />
-                  REAL VISION AI ON
-                </span>
-              )}
+                )}
+                AI {isTrackingEnabled && !error && !isPaused ? 'LIVE' : 'OFFLINE'}
+              </span>
             </div>
             <p className="mt-1 text-[11px] text-slate-400 font-mono">
               {camera.location || 'Local Workstation'} • {activeResolution}
