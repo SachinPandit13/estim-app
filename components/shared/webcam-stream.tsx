@@ -267,10 +267,9 @@ export function WebcamStreamPlayer({ camera, className }: WebcamStreamProps) {
         ctx.fillStyle = strokeColor;
         ctx.fillText(headerText, x + 8, Math.max(0, y - badgeH - 4) + 14);
 
-        // 4. PPE / Violation Indicator Tags — only green OK when status is explicitly compliant
-        const helmetStatus =
-          worker.helmet_status || (worker.has_helmet ? 'compliant' : 'violation');
-        const vestStatus = worker.vest_status || (worker.has_vest ? 'compliant' : 'violation');
+        // 4. PPE tags — green OK only when API status is explicitly compliant
+        const helmetStatus = worker.helmet_status ?? 'violation';
+        const vestStatus = worker.vest_status ?? 'violation';
         const ppeTag = (kind: 'Helmet' | 'Vest', status: string) => {
           if (status === 'compliant') return { text: `${kind}: OK`, tone: 'ok' as const };
           if (status === 'unknown') return { text: `${kind}: ?`, tone: 'unknown' as const };
