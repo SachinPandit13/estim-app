@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { apiClient } from "@/lib/api-client";
-import { usePolling } from "@/hooks/use-polling";
-import { KpiStatCard } from "@/components/shared/kpi-stat-card";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { SeverityBadge } from "@/components/shared/severity-badge";
-import { ErrorState } from "@/components/shared/error-state";
-import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
+import { usePolling } from '@/hooks/use-polling';
+import { KpiStatCard } from '@/components/shared/kpi-stat-card';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { SeverityBadge } from '@/components/shared/severity-badge';
+import { ErrorState } from '@/components/shared/error-state';
+import { EmptyState } from '@/components/shared/empty-state';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableHeader,
@@ -18,7 +18,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Cctv,
   Video,
@@ -29,10 +29,13 @@ import {
   AlertTriangle,
   Clock,
   ShieldCheck,
-} from "lucide-react";
-import type { DashboardSummary, SafetyIncident } from "@/types/api";
+} from 'lucide-react';
+import type { DashboardSummary, SafetyIncident } from '@/types/api';
+
+import { useEstimUi } from '@/store/estim-ui-store';
 
 export default function OverviewPage() {
+  const { toast } = useEstimUi();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [recentIncidents, setRecentIncidents] = useState<SafetyIncident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,14 +45,14 @@ export default function OverviewPage() {
   const fetchData = async () => {
     try {
       const [sumRes, incRes] = await Promise.all([
-        apiClient<DashboardSummary>("/dashboard/summary"),
-        apiClient<SafetyIncident[]>("/incidents?limit=5"),
+        apiClient<DashboardSummary>('/dashboard/summary'),
+        apiClient<SafetyIncident[]>('/incidents?limit=5'),
       ]);
       setSummary(sumRes);
       setRecentIncidents(incRes);
       setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load dashboard metrics");
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard metrics');
     } finally {
       setLoading(false);
     }
@@ -61,12 +64,19 @@ export default function OverviewPage() {
     setAcknowledgingId(id);
     try {
       await apiClient<SafetyIncident>(`/incidents/${id}/acknowledge`, {
-        method: "PATCH",
+        method: 'PATCH',
       });
+      toast.success(
+        'Incident Acknowledged',
+        'The safety incident has been marked as acknowledged.',
+      );
       // Refresh local list
       await fetchData();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to acknowledge incident");
+      toast.error(
+        'Action Failed',
+        err instanceof Error ? err.message : 'Failed to acknowledge incident',
+      );
     } finally {
       setAcknowledgingId(null);
     }
@@ -131,7 +141,7 @@ export default function OverviewPage() {
           description={
             totalCameras > 0
               ? `${Math.round((onlineCameras / totalCameras) * 100)}% network availability`
-              : "No cameras configured"
+              : 'No cameras configured'
           }
           accentColor="success"
           isLoading={loading && !summary}
@@ -141,7 +151,7 @@ export default function OverviewPage() {
           value={openIncidents}
           icon={<AlertTriangle className="size-4" />}
           description="Awaiting supervisor resolution"
-          accentColor={openIncidents > 0 ? "warning" : "default"}
+          accentColor={openIncidents > 0 ? 'warning' : 'default'}
           isLoading={loading && !summary}
         />
         <KpiStatCard
@@ -149,7 +159,7 @@ export default function OverviewPage() {
           value={criticalIncidents}
           icon={<AlertOctagon className="size-4" />}
           description="Immediate intervention required"
-          accentColor={criticalIncidents > 0 ? "critical" : "default"}
+          accentColor={criticalIncidents > 0 ? 'critical' : 'default'}
           isLoading={loading && !summary}
         />
       </div>
@@ -161,9 +171,7 @@ export default function OverviewPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">
-                  Violations by Category
-                </CardTitle>
+                <CardTitle className="text-base font-semibold">Violations by Category</CardTitle>
                 <CardDescription className="text-xs">
                   Detected safety anomalies today
                 </CardDescription>
@@ -181,14 +189,12 @@ export default function OverviewPage() {
             ) : (
               violationEntries.map(([category, count]) => {
                 const percentage =
-                  totalViolationsCount > 0
-                    ? Math.round((count / totalViolationsCount) * 100)
-                    : 0;
+                  totalViolationsCount > 0 ? Math.round((count / totalViolationsCount) * 100) : 0;
                 return (
                   <div key={category} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-foreground capitalize">
-                        {category.replace(/_/g, " ")}
+                        {category.replace(/_/g, ' ')}
                       </span>
                       <span className="font-mono text-muted-foreground">
                         {count} ({percentage}%)
@@ -212,9 +218,7 @@ export default function OverviewPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base font-semibold">
-                Priority Safety Incidents
-              </CardTitle>
+              <CardTitle className="text-base font-semibold">Priority Safety Incidents</CardTitle>
               <CardDescription className="text-xs">
                 Most recent hazardous events requiring supervisor action
               </CardDescription>
@@ -255,7 +259,7 @@ export default function OverviewPage() {
                       </TableCell>
                       <TableCell className="font-medium text-xs">
                         <div className="capitalize text-foreground font-semibold">
-                          {inc.incident_type.replace(/_/g, " ")}
+                          {inc.incident_type.replace(/_/g, ' ')}
                         </div>
                         <div className="text-[11px] text-muted-foreground font-mono">
                           Detections: {inc.detection_count}
@@ -265,9 +269,9 @@ export default function OverviewPage() {
                         <div className="flex items-center gap-1">
                           <Clock className="size-3 text-muted-foreground shrink-0" />
                           {new Date(inc.last_detected_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
                           })}
                         </div>
                       </TableCell>
@@ -275,7 +279,7 @@ export default function OverviewPage() {
                         <StatusBadge status={inc.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        {inc.status === "open" ? (
+                        {inc.status === 'open' ? (
                           <Button
                             size="xs"
                             variant="outline"
@@ -283,7 +287,7 @@ export default function OverviewPage() {
                             onClick={() => handleAcknowledge(inc.id)}
                             className="h-6 text-[11px] font-mono border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
                           >
-                            {acknowledgingId === inc.id ? "Saving..." : "Acknowledge"}
+                            {acknowledgingId === inc.id ? 'Saving...' : 'Acknowledge'}
                           </Button>
                         ) : (
                           <Link
