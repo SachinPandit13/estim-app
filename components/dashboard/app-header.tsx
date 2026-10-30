@@ -88,36 +88,36 @@ export function AppHeader() {
   const title = routeTitles[pathname] || 'Dashboard';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 backdrop-blur-xs px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 transition-colors duration-150">
       <div className="flex items-center gap-3">
         <SidebarTrigger className="-ml-1" />
         <div className="h-4 w-px bg-border hidden sm:block" />
-        <h1 className="font-heading text-base font-semibold text-foreground tracking-tight">
-          {title}
-        </h1>
+        <h1 className="text-page-title text-foreground tracking-tight">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-4">
-        {/* Real-time WebSocket connection indicator */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Real-time WebSocket connection status badge */}
         <div
-          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 text-[11px] font-mono text-muted-foreground border border-border/50"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-surface-raised text-[11px] font-mono text-subtle border border-border"
           title={isConnected ? 'Live WebSocket Connected' : 'Connecting to WebSocket...'}
         >
           <Radio
-            className={`size-3 ${isConnected ? 'text-emerald-500 animate-pulse' : 'text-amber-500'}`}
+            className={`size-3 ${isConnected ? 'text-success animate-pulse' : 'text-warning'}`}
           />
-          <span className="hidden md:inline">{isConnected ? 'WS LIVE' : 'WS CONNECTING'}</span>
+          <span className="hidden md:inline font-medium">
+            {isConnected ? 'WS LIVE' : 'WS CONNECTING'}
+          </span>
         </div>
 
-        {/* Clean Notification Bell Icon with Badge */}
+        {/* Notification Center Trigger Icon */}
         <Link
           href="/notifications"
-          className="relative flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="relative flex size-9 items-center justify-center rounded-[8px] border border-border bg-surface text-subtle hover:bg-surface-raised hover:text-foreground transition-colors"
           title="Notifications"
         >
           <Bell className="size-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white font-mono animate-pulse">
+            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-danger-foreground font-mono animate-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
