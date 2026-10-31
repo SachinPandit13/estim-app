@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { apiClient } from "@/lib/api-client";
-import type { User } from "@/types/api";
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
+import type { User } from '@/types/api';
 
 interface TokenResponse {
   access_token: string;
@@ -21,8 +21,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = "estim_access_token";
-const USER_KEY = "estim_user";
+const TOKEN_KEY = 'estim_access_token';
+const USER_KEY = 'estim_user';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -34,12 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
       if (storedToken && storedUser) {
+        // oxlint-disable-next-line react/set-state-in-effect
         setUser(JSON.parse(storedUser));
       }
     } catch {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
     } finally {
+      // oxlint-disable-next-line react/set-state-in-effect
       setIsLoading(false);
     }
   }, []);
@@ -47,8 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const data = await apiClient<TokenResponse>("/auth/login", {
-        method: "POST",
+      const data = await apiClient<TokenResponse>('/auth/login', {
+        method: 'POST',
         body: JSON.stringify({ email, password }),
       });
 
@@ -57,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.cookie = `estim_token=${data.access_token}; path=/; max-age=28800; SameSite=Lax`;
 
       setUser(data.user);
-      router.push("/");
+      router.push('/');
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY);
     document.cookie = `estim_token=; path=/; max-age=0; SameSite=Lax`;
     setUser(null);
-    router.push("/login");
+    router.push('/login');
   };
 
   return (
@@ -89,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
