@@ -7,26 +7,13 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
+import { Modal } from '@/components/ui/modal';
 import { MapPin, Plus, Cctv } from 'lucide-react';
 import type { Camera, Zone, ZoneCreateInput } from '@/types/api';
+import { useEstimUi } from '@/store/estim-ui-store';
 
 export default function ZonesPage() {
+  const { toast } = useEstimUi();
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [zones, setZones] = useState<Zone[]>([]);
@@ -122,6 +109,7 @@ export default function ZonesPage() {
           camera_id: formData.camera_id || selectedCameraId,
         }),
       });
+      toast.success('Zone Created', `Monitoring boundary "${formData.name}" established.`);
       setIsDialogOpen(false);
       setFormData({
         camera_id: selectedCameraId,
@@ -131,7 +119,7 @@ export default function ZonesPage() {
       });
       await fetchZones(selectedCameraId);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to create zone');
+      toast.error('Creation Failed', err instanceof Error ? err.message : 'Failed to create zone');
     } finally {
       setSubmitting(false);
     }
@@ -140,14 +128,14 @@ export default function ZonesPage() {
   const currentCamera = cameras.find((c) => c.id === selectedCameraId);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border">
         <div>
-          <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Camera Monitoring Zones & Hazard Boundaries
           </h2>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-micro text-muted font-mono mt-0.5">
             Define regions of interest (ROI) and sub-zones associated with specific facility cameras
           </p>
         </div>
@@ -156,86 +144,24 @@ export default function ZonesPage() {
           size="sm"
           disabled={!selectedCameraId}
           onClick={() => setIsDialogOpen(true)}
-          className="h-8 gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
+          variant="default"
+          className="gap-1.5 self-start sm:self-auto"
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-4" />
           Add Zone Boundary
         </Button>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold">Create Monitoring Zone</DialogTitle>
-              <DialogDescription className="text-xs">
-                Associate a designated safety area with {currentCamera?.name || 'the camera'}.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit} className="space-y-3 py-2">
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Camera Origin</label>
-                <Input
-                  disabled
-                  value={currentCamera?.name || selectedCameraId}
-                  className="h-8 text-xs bg-muted text-muted-foreground"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Zone Name *</label>
-                <Input
-                  required
-                  placeholder="e.g. Forklift High-Traffic Crosswalk"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="h-8 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Description</label>
-                <Input
-                  placeholder="e.g. Mandates full hardhat and high-vis vest compliance"
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="h-8 text-xs"
-                />
-              </div>
-
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsDialogOpen(false)}
-                  className="h-8 text-xs"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  size="sm"
-                  className="h-8 text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
-                >
-                  {submitting ? 'Saving...' : 'Create Zone'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Camera Selection Bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-border bg-surface p-3.5 shadow-xs">
         <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-          <Cctv className="size-4 text-amber-500" />
+          <Cctv className="size-4 text-brand" />
           <span>Active Camera Source:</span>
         </div>
         <select
           value={selectedCameraId}
           onChange={(e) => setSelectedCameraId(e.target.value)}
-          className="h-8 flex-1 sm:max-w-xs rounded-lg border border-border bg-background px-2.5 text-xs text-foreground outline-hidden font-mono"
+          className="h-9 flex-1 sm:max-w-xs rounded-[10px] border border-border bg-surface-raised px-3 text-xs text-foreground font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ring"
         >
           {cameras.map((c) => (
             <option key={c.id} value={c.id}>
@@ -244,7 +170,7 @@ export default function ZonesPage() {
           ))}
         </select>
         {currentCamera && (
-          <span className="text-xs text-muted-foreground font-mono">
+          <span className="text-micro text-muted font-mono">
             Channel {currentCamera.dvr_channel ?? 1} • {currentCamera.status}
           </span>
         )}
@@ -254,56 +180,107 @@ export default function ZonesPage() {
       {error && cameras.length === 0 ? (
         <ErrorState message={error} />
       ) : zonesLoading ? (
-        <div className="py-12 text-center text-xs font-mono text-muted-foreground animate-pulse">
+        <div className="py-12 text-center text-xs font-mono text-muted animate-pulse">
           Loading camera zones...
         </div>
       ) : zones.length === 0 ? (
         <EmptyState
-          icon={<MapPin className="size-6 text-muted-foreground" />}
+          icon={<MapPin className="size-6 text-muted" />}
           title="No zones configured for this camera"
           description="Create specific safety boundary zones to localize incident triggers."
           actionLabel="Create Zone"
           onAction={() => setIsDialogOpen(true)}
         />
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Zone Name & Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Coordinates Mode</TableHead>
-                <TableHead>Created At</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {zones.map((zone) => (
-                <TableRow key={zone.id}>
-                  <TableCell>
-                    <div className="font-semibold text-foreground text-xs">{zone.name}</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {zone.description || 'No description specified'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={zone.is_active ? 'active' : 'inactive'} />
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {zone.roi_polygon && zone.roi_polygon.length > 0
-                      ? `${zone.roi_polygon.length} polygon vertex points`
-                      : 'Whole Camera Viewport (Default ROI)'}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {new Date(zone.created_at).toLocaleDateString([], {
-                      dateStyle: 'medium',
-                    })}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="card overflow-hidden">
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Zone Name & Description</th>
+                  <th>Status</th>
+                  <th>Coordinates Mode</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {zones.map((zone) => (
+                  <tr key={zone.id}>
+                    <td>
+                      <div className="font-semibold text-foreground text-xs">{zone.name}</div>
+                      <div className="text-micro text-muted">
+                        {zone.description || 'No description specified'}
+                      </div>
+                    </td>
+                    <td>
+                      <StatusBadge status={zone.is_active ? 'active' : 'inactive'} />
+                    </td>
+                    <td className="font-mono text-meta text-muted">
+                      {zone.roi_polygon && zone.roi_polygon.length > 0
+                        ? `${zone.roi_polygon.length} polygon vertex points`
+                        : 'Whole Camera Viewport (Default ROI)'}
+                    </td>
+                    <td className="font-mono text-meta text-muted">
+                      {new Date(zone.created_at).toLocaleDateString([], {
+                        dateStyle: 'medium',
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      {/* Create Zone Modal */}
+      <Modal
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        title="Create Monitoring Zone"
+        description={`Associate a designated safety area boundary with ${currentCamera?.name || 'the camera'}.`}
+        maxWidth="max-w-[28rem]"
+        footer={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="zone-form"
+              loading={submitting}
+              loadingText="Saving..."
+              variant="default"
+            >
+              Create Zone
+            </Button>
+          </div>
+        }
+      >
+        <form id="zone-form" onSubmit={handleSubmit} className="space-y-3.5">
+          <Input
+            label="Camera Origin"
+            disabled
+            value={currentCamera?.name || selectedCameraId}
+            className="font-mono bg-surface-sunken"
+          />
+
+          <Input
+            label="Zone Name"
+            required
+            placeholder="e.g. Forklift High-Traffic Crosswalk"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+
+          <Input
+            label="Description"
+            placeholder="e.g. Mandates full hardhat and high-vis vest compliance"
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+        </form>
+      </Modal>
     </div>
   );
 }
