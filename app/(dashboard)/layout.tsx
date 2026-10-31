@@ -39,11 +39,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background text-foreground">
+      <div className="flex min-h-screen w-full bg-background text-foreground overflow-x-hidden">
         <AppSidebar />
-        <SidebarInset className="flex flex-1 flex-col min-w-0 bg-background">
+        <SidebarInset className="flex flex-1 flex-col min-w-0 bg-background overflow-x-hidden">
           <AppHeader />
-          <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-y-auto min-w-0">{children}</main>
+          <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-y-auto overflow-x-hidden min-w-0">
+            {children}
+          </main>
         </SidebarInset>
       </div>
     </SidebarProvider>
