@@ -36,8 +36,11 @@ export function AppHeader() {
       setUnreadCount(res.unread_count);
     } catch {
       try {
-        const notifs = await apiClient<NotificationItem[]>('/notifications?limit=50');
-        const unread = notifs.filter((n) => !n.is_read).length;
+        const notifs = await apiClient<NotificationItem[] | { items: NotificationItem[] }>(
+          '/notifications?limit=50',
+        );
+        const list = Array.isArray(notifs) ? notifs : (notifs?.items ?? []);
+        const unread = list.filter((n) => !n.is_read).length;
         setUnreadCount(unread);
       } catch {
         // Quiet fail if not yet authenticated
@@ -88,10 +91,10 @@ export function AppHeader() {
   const title = routeTitles[pathname] || 'Dashboard';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 transition-colors duration-150">
+    <header className="sticky top-0 z-30 flex h-13.5 shrink-0 items-center justify-between border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 transition-colors duration-150">
       <div className="flex items-center gap-3">
-        <SidebarTrigger className="-ml-1" />
-        <div className="h-4 w-px bg-border hidden sm:block" />
+        <SidebarTrigger className="-ml-1 md:hidden" />
+        <div className="h-4 w-px bg-border md:hidden" />
         <h1 className="text-page-title text-foreground tracking-tight">{title}</h1>
       </div>
 
