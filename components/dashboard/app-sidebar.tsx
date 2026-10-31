@@ -116,8 +116,11 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <Sidebar className="border-r border-border bg-surface text-foreground transition-colors duration-150">
-      <SidebarHeader className="border-b border-border px-4 py-4">
+    <Sidebar
+      collapsible="none"
+      className="shrink-0 sticky top-0 h-screen border-r border-border bg-surface text-foreground transition-colors duration-150"
+    >
+      <SidebarHeader className="border-b border-border px-4 py-2.5">
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="flex size-8 items-center justify-center rounded-lg bg-brand text-brand-foreground font-bold shadow-sm transition-transform duration-150 group-hover:scale-105">
             <ShieldCheck className="size-5" />
