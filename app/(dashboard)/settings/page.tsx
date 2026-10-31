@@ -73,12 +73,12 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border">
         <div>
-          <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             System Telemetry & Platform Diagnostics
           </h2>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-micro text-muted font-mono mt-0.5">
             Direct monitoring of backend database connection pools, inference API, and session
             tokens
           </p>
@@ -86,12 +86,13 @@ export default function SettingsPage() {
 
         <Button
           size="sm"
-          variant="outline"
+          variant="secondary"
           onClick={fetchDbPool}
-          disabled={loading}
-          className="h-8 gap-1.5 text-xs font-mono"
+          loading={loading}
+          loadingText="Checking..."
+          className="gap-1.5 font-mono text-xs"
         >
-          <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className="size-3.5" />
           Check Health
         </Button>
       </div>
@@ -102,8 +103,8 @@ export default function SettingsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Database className="size-4 text-amber-500" />
-                <CardTitle className="text-base font-semibold">Database Pool Status</CardTitle>
+                <Database className="size-4 text-brand" />
+                <CardTitle>Database Pool Status</CardTitle>
               </div>
               {dbStatus ? (
                 <StatusBadge status={dbStatus.status} />
@@ -111,42 +112,38 @@ export default function SettingsPage() {
                 <StatusBadge status="warning" label="Connecting..." />
               )}
             </div>
-            <CardDescription className="text-xs">
-              PostgreSQL connection pooling telemetry
-            </CardDescription>
+            <CardDescription>PostgreSQL connection pooling telemetry</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 font-mono text-xs">
+          <CardContent className="space-y-3 font-mono text-micro">
             {error ? (
-              <div className="rounded-lg border border-red-500/20 bg-red-50/20 p-3 text-red-600 dark:text-red-400 flex items-center gap-2">
+              <div className="rounded-[10px] border border-danger/30 bg-danger-muted p-3 text-danger flex items-center gap-2">
                 <AlertCircle className="size-4 shrink-0" />
                 <span>{error}</span>
               </div>
             ) : dbStatus ? (
               <div className="space-y-2">
                 <div className="flex justify-between border-b border-border pb-1.5">
-                  <span className="text-muted-foreground">Pool Health:</span>
-                  <span className="font-semibold text-emerald-500 flex items-center gap-1">
+                  <span className="text-muted">Pool Health:</span>
+                  <span className="font-semibold text-success flex items-center gap-1">
                     <CheckCircle2 className="size-3.5" />
                     Operational
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-border pb-1.5">
-                  <span className="text-muted-foreground">Message:</span>
+                  <span className="text-muted">Message:</span>
                   <span className="text-foreground">{dbStatus.message}</span>
                 </div>
                 {dbStatus.pool_info && (
                   <div className="pt-1">
-                    <span className="text-muted-foreground block mb-1">Pool Info Dump:</span>
-                    <pre className="p-2 rounded bg-muted text-[11px] overflow-x-auto">
+                    <span className="text-muted block mb-1">Pool Info Dump:</span>
+                    <pre className="p-2.5 rounded-[8px] bg-surface-sunken text-foreground border border-border text-[11px] overflow-x-auto">
                       {JSON.stringify(dbStatus.pool_info, null, 2)}
                     </pre>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="py-4 text-center text-muted-foreground">
-                Querying database pool status...
-              </div>
+              <div className="py-4 text-center text-muted">Querying database pool status...</div>
             )}
           </CardContent>
         </Card>
@@ -155,29 +152,27 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <User className="size-4 text-amber-500" />
-              <CardTitle className="text-base font-semibold">Active Session Telemetry</CardTitle>
+              <User className="size-4 text-brand" />
+              <CardTitle>Active Session Telemetry</CardTitle>
             </div>
-            <CardDescription className="text-xs">
-              Current authenticated supervisor identity
-            </CardDescription>
+            <CardDescription>Current authenticated supervisor identity</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2.5 font-mono text-xs">
+          <CardContent className="space-y-2.5 font-mono text-micro">
             <div className="flex justify-between border-b border-border pb-1.5">
-              <span className="text-muted-foreground">User ID:</span>
+              <span className="text-muted">User ID:</span>
               <span className="text-foreground truncate max-w-[180px]">{user?.id || 'N/A'}</span>
             </div>
             <div className="flex justify-between border-b border-border pb-1.5">
-              <span className="text-muted-foreground">Account Email:</span>
+              <span className="text-muted">Account Email:</span>
               <span className="text-foreground">{user?.email || 'N/A'}</span>
             </div>
             <div className="flex justify-between border-b border-border pb-1.5">
-              <span className="text-muted-foreground">Assigned Role:</span>
-              <span className="font-bold text-amber-500 uppercase">{user?.role || 'Member'}</span>
+              <span className="text-muted">Assigned Role:</span>
+              <span className="font-bold text-brand uppercase">{user?.role || 'Member'}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Security State:</span>
-              <span className="text-emerald-500 flex items-center gap-1">
+              <span className="text-muted">Security State:</span>
+              <span className="text-success flex items-center gap-1 font-semibold">
                 <ShieldCheck className="size-3.5" />
                 JWT Bearer Active
               </span>
@@ -190,31 +185,27 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Server className="size-4 text-amber-500" />
-            <CardTitle className="text-base font-semibold">
-              Inference Engine & API Endpoints
-            </CardTitle>
+            <Server className="size-4 text-brand" />
+            <CardTitle>Inference Engine & API Endpoints</CardTitle>
           </div>
-          <CardDescription className="text-xs">
-            Target FastAPI backend server configuration
-          </CardDescription>
+          <CardDescription>Target FastAPI backend server configuration</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 font-mono text-xs">
+        <CardContent className="space-y-2 font-mono text-micro">
           <div className="flex justify-between border-b border-border pb-1.5">
-            <span className="text-muted-foreground">Inference Base URL:</span>
+            <span className="text-muted">Inference Base URL:</span>
             <span className="text-foreground">
               {process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001/api/v1'}
             </span>
           </div>
           <div className="flex justify-between border-b border-border pb-1.5">
-            <span className="text-muted-foreground">Telemetry Host:</span>
+            <span className="text-muted">Telemetry Host:</span>
             <span className="text-foreground">
               {process.env.NEXT_PUBLIC_HEALTH_BASE_URL || 'http://localhost:8001'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Single-Tenant Mode:</span>
-            <span className="text-emerald-500 font-bold">Enabled</span>
+            <span className="text-muted">Single-Tenant Mode:</span>
+            <span className="text-success font-bold">Enabled</span>
           </div>
         </CardContent>
       </Card>
