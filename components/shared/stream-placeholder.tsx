@@ -290,12 +290,12 @@ export function StreamPlaceholder({ camera, className }: StreamPlaceholderProps)
       </div>
 
       {/* Safety Simulation Quick Test Bar */}
-      <div className="mt-1 flex items-center justify-between gap-1 rounded bg-slate-900/60 p-1.5 border border-slate-800/80 text-[11px] font-mono z-10">
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5 rounded bg-slate-900/60 p-1.5 border border-slate-800/80 text-[11px] font-mono z-10">
         <div className="flex items-center gap-1 text-slate-400">
           <ShieldAlert className="size-3 text-amber-400" />
           <span>Safety Rule Test:</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <button
             type="button"
             onClick={() => setSimMode('normal')}
