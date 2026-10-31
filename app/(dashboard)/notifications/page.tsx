@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, CheckCheck, Check, Clock, ArrowRight, AlertTriangle, RotateCcw } from 'lucide-react';
 import type { NotificationItem } from '@/types/api';
+import { useEstimUi } from '@/store/estim-ui-store';
 
 export default function NotificationsPage() {
+  const { toast } = useEstimUi();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [_loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function NotificationsPage() {
         method: 'PATCH',
       });
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to mark as read');
+      toast.error('Action Failed', err instanceof Error ? err.message : 'Failed to mark as read');
       await fetchNotifications();
     } finally {
       setActionInProgress(null);
@@ -79,7 +81,7 @@ export default function NotificationsPage() {
         method: 'PATCH',
       });
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to mark as unread');
+      toast.error('Action Failed', err instanceof Error ? err.message : 'Failed to mark as unread');
       await fetchNotifications();
     } finally {
       setActionInProgress(null);
@@ -101,8 +103,12 @@ export default function NotificationsPage() {
       await apiClient<{ updated_count: number }>('/notifications/read-all', {
         method: 'PATCH',
       });
+      toast.success('All Read', 'All notifications marked as read.');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to mark all as read');
+      toast.error(
+        'Action Failed',
+        err instanceof Error ? err.message : 'Failed to mark all as read',
+      );
       await fetchNotifications();
     } finally {
       setActionInProgress(null);
@@ -117,36 +123,38 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="space-y-5 max-w-4xl mx-auto">
       {/* Header bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border">
         <div>
-          <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Facility Safety Notifications
           </h2>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-micro text-muted font-mono mt-0.5">
             {unreadCount} unread alert{unreadCount !== 1 ? 's' : ''} • Critical dispatch history
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg border border-border bg-card p-0.5 text-xs font-mono">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center rounded-[8px] border border-border bg-surface p-0.5 text-xs font-mono">
             <button
+              type="button"
               onClick={() => setFilter('all')}
-              className={`px-2.5 py-1 rounded-md transition-colors ${
+              className={`px-3 py-1 rounded-[6px] transition-colors ${
                 filter === 'all'
-                  ? 'bg-muted text-foreground font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-surface-raised text-brand font-semibold shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               All ({notifications.length})
             </button>
             <button
+              type="button"
               onClick={() => setFilter('unread')}
-              className={`px-2.5 py-1 rounded-md transition-colors ${
+              className={`px-3 py-1 rounded-[6px] transition-colors ${
                 filter === 'unread'
-                  ? 'bg-muted text-foreground font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-surface-raised text-brand font-semibold shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               Unread ({unreadCount})
@@ -156,10 +164,11 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={handleMarkAllRead}
-              disabled={actionInProgress === 'all'}
-              className="h-8 text-xs font-mono gap-1.5"
+              loading={actionInProgress === 'all'}
+              loadingText="Marking..."
+              className="gap-1.5 font-mono text-xs"
             >
               <CheckCheck className="size-3.5" />
               Mark All Read
@@ -173,29 +182,29 @@ export default function NotificationsPage() {
         <ErrorState message={error} onRetry={fetchNotifications} />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Bell className="size-6 text-muted-foreground" />}
+          icon={<Bell className="size-6 text-muted" />}
           title={filter === 'unread' ? 'No unread alerts' : 'No notifications'}
           description="Operational safety alerts will appear here when hazardous thresholds are crossed."
         />
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {filtered.map((item) => (
             <div
               key={item.id}
-              className={`flex items-start justify-between gap-3 rounded-xl border p-4 transition-all ${
+              className={`flex items-start justify-between gap-3.5 rounded-[12px] border p-4 transition-all ${
                 item.is_read
-                  ? 'border-border bg-card/60 text-muted-foreground'
-                  : 'border-amber-500/30 bg-amber-50/10 text-foreground shadow-xs dark:bg-amber-950/10'
+                  ? 'border-border bg-surface/70 text-muted'
+                  : 'border-brand/30 bg-brand-soft/20 text-foreground shadow-xs'
               }`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3.5">
                 <div
-                  className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                  className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[8px] ${
                     item.severity === 'critical'
-                      ? 'bg-red-500/20 text-red-500'
+                      ? 'bg-danger-muted text-danger border border-danger/30'
                       : item.severity === 'high'
-                        ? 'bg-amber-500/20 text-amber-500'
-                        : 'bg-muted text-muted-foreground'
+                        ? 'bg-warning-muted text-warning border border-warning/30'
+                        : 'bg-surface-raised text-muted border border-border'
                   }`}
                 >
                   <AlertTriangle className="size-4" />
@@ -203,18 +212,16 @@ export default function NotificationsPage() {
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-heading text-sm font-semibold text-foreground">
-                      {item.title}
-                    </h4>
+                    <h4 className="text-body font-semibold text-foreground">{item.title}</h4>
                     <Badge
                       variant="outline"
-                      className="font-mono text-[10px] uppercase tracking-wider px-1.5 py-0"
+                      className="font-mono text-[10px] uppercase tracking-wider px-1.5 py-0 bg-surface-raised border-border text-subtle"
                     >
                       {item.severity}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{item.message}</p>
-                  <div className="flex items-center gap-2 pt-1 text-[11px] font-mono text-muted-foreground">
+                  <p className="text-meta text-muted leading-relaxed">{item.message}</p>
+                  <div className="flex items-center gap-2 pt-1 text-micro font-mono text-muted">
                     <Clock className="size-3" />
                     <span>{new Date(item.created_at).toLocaleString()}</span>
                   </div>
@@ -225,7 +232,7 @@ export default function NotificationsPage() {
                 {item.incident_id && (
                   <Link
                     href="/incidents"
-                    className="inline-flex h-7 items-center justify-center rounded-md px-2 text-xs font-mono gap-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    className="inline-flex h-7 items-center justify-center rounded-[6px] px-2 text-micro font-mono gap-1 text-muted hover:bg-surface-raised hover:text-foreground transition-colors"
                   >
                     Incident
                     <ArrowRight className="size-3" />
@@ -235,10 +242,10 @@ export default function NotificationsPage() {
                 {!item.is_read ? (
                   <Button
                     size="xs"
-                    variant="outline"
+                    variant="secondary"
                     disabled={actionInProgress === item.id}
                     onClick={() => handleMarkRead(item.id)}
-                    className="h-7 text-xs font-mono gap-1 hover:border-emerald-500/50 hover:text-emerald-500"
+                    className="h-7 text-micro font-mono gap-1 hover:border-success/50 hover:text-success"
                     title="Mark as Read"
                   >
                     <Check className="size-3" />
@@ -250,7 +257,7 @@ export default function NotificationsPage() {
                     variant="ghost"
                     disabled={actionInProgress === item.id}
                     onClick={() => handleMarkUnread(item.id)}
-                    className="h-7 text-xs font-mono gap-1 text-muted-foreground hover:text-amber-500"
+                    className="h-7 text-micro font-mono gap-1 text-muted hover:text-brand"
                     title="Mark as Unread"
                   >
                     <RotateCcw className="size-3" />
