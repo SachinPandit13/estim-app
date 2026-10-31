@@ -40,7 +40,7 @@ export default function ReportsPage() {
 
   if (loading && !summary) {
     return (
-      <div className="py-20 text-center text-xs font-mono text-muted-foreground animate-pulse">
+      <div className="py-20 text-center text-xs font-mono text-muted animate-pulse">
         Compiling facility safety telemetry and reports...
       </div>
     );
@@ -67,64 +67,48 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* Header bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border">
         <div>
-          <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Industrial Worker Safety Analytics & Compliance Report
           </h2>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-micro text-muted font-mono mt-0.5">
             Derived from active facility sensor telemetry and confirmed incident records
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-mono text-muted-foreground">
-          <Calendar className="size-3.5 text-amber-500" />
+        <div className="flex items-center gap-1.5 rounded-[8px] border border-border bg-surface px-3 py-1.5 text-xs font-mono text-subtle">
+          <Calendar className="size-3.5 text-brand" />
           <span>Operational Window: Today (UTC)</span>
         </div>
       </div>
 
       {/* KPI Highlights */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium uppercase font-mono text-muted-foreground">
-              Camera Network Health
-            </span>
-            <div className="mt-2 text-2xl font-bold font-mono text-foreground sm:text-3xl">
-              {cameraAvailabilityPct}%
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {onlineCameras} of {totalCameras} camera nodes actively streaming
-            </p>
-          </CardContent>
+        <Card padded>
+          <span className="text-label text-muted">Camera Network Health</span>
+          <div className="mt-2 text-stat-lg font-mono text-foreground">
+            {cameraAvailabilityPct}%
+          </div>
+          <p className="mt-1 text-meta text-muted">
+            {onlineCameras} of {totalCameras} camera nodes actively streaming
+          </p>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium uppercase font-mono text-muted-foreground">
-              Incident Resolution Rate
-            </span>
-            <div className="mt-2 text-2xl font-bold font-mono text-foreground sm:text-3xl">
-              {resolutionRatePct}%
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {resolvedCount} resolved out of {totalIncidentsCount} tracked incidents
-            </p>
-          </CardContent>
+        <Card padded>
+          <span className="text-label text-muted">Incident Resolution Rate</span>
+          <div className="mt-2 text-stat-lg font-mono text-foreground">{resolutionRatePct}%</div>
+          <p className="mt-1 text-meta text-muted">
+            {resolvedCount} resolved out of {totalIncidentsCount} tracked incidents
+          </p>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium uppercase font-mono text-muted-foreground">
-              High / Critical Hazards
-            </span>
-            <div className="mt-2 text-2xl font-bold font-mono text-red-500 sm:text-3xl">
-              {criticalCount + highCount}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {criticalCount} critical emergencies • {highCount} high hazards
-            </p>
-          </CardContent>
+        <Card padded>
+          <span className="text-label text-muted">High / Critical Hazards</span>
+          <div className="mt-2 text-stat-lg font-mono text-danger">{criticalCount + highCount}</div>
+          <p className="mt-1 text-meta text-muted">
+            {criticalCount} critical emergencies • {highCount} high hazards
+          </p>
         </Card>
       </div>
 
@@ -133,20 +117,18 @@ export default function ReportsPage() {
         {/* Severity Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Hazard Severity Distribution</CardTitle>
-            <CardDescription className="text-xs">
-              Categorization across all recorded facility incidents
-            </CardDescription>
+            <CardTitle>Hazard Severity Distribution</CardTitle>
+            <CardDescription>Categorization across all recorded facility incidents</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-red-500 font-mono">Critical</span>
-                <span className="font-mono text-muted-foreground">{criticalCount} incidents</span>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-meta">
+                <span className="font-semibold text-danger font-mono">Critical</span>
+                <span className="font-mono text-muted">{criticalCount} incidents</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken border border-border">
                 <div
-                  className="h-full bg-red-600 rounded-full"
+                  className="h-full bg-danger rounded-full transition-all duration-300"
                   style={{
                     width: `${totalIncidentsCount > 0 ? (criticalCount / totalIncidentsCount) * 100 : 0}%`,
                   }}
@@ -154,14 +136,14 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-amber-500 font-mono">High</span>
-                <span className="font-mono text-muted-foreground">{highCount} incidents</span>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-meta">
+                <span className="font-semibold text-warning font-mono">High</span>
+                <span className="font-mono text-muted">{highCount} incidents</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken border border-border">
                 <div
-                  className="h-full bg-amber-500 rounded-full"
+                  className="h-full bg-warning rounded-full transition-all duration-300"
                   style={{
                     width: `${totalIncidentsCount > 0 ? (highCount / totalIncidentsCount) * 100 : 0}%`,
                   }}
@@ -169,14 +151,14 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-yellow-600 font-mono">Medium</span>
-                <span className="font-mono text-muted-foreground">{medCount} incidents</span>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-meta">
+                <span className="font-semibold text-brand font-mono">Medium</span>
+                <span className="font-mono text-muted">{medCount} incidents</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken border border-border">
                 <div
-                  className="h-full bg-yellow-500 rounded-full"
+                  className="h-full bg-brand rounded-full transition-all duration-300"
                   style={{
                     width: `${totalIncidentsCount > 0 ? (medCount / totalIncidentsCount) * 100 : 0}%`,
                   }}
@@ -184,14 +166,14 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-slate-400 font-mono">Low</span>
-                <span className="font-mono text-muted-foreground">{lowCount} incidents</span>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-meta">
+                <span className="font-semibold text-subtle font-mono">Low</span>
+                <span className="font-mono text-muted">{lowCount} incidents</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken border border-border">
                 <div
-                  className="h-full bg-slate-400 rounded-full"
+                  className="h-full bg-subtle rounded-full transition-all duration-300"
                   style={{
                     width: `${totalIncidentsCount > 0 ? (lowCount / totalIncidentsCount) * 100 : 0}%`,
                   }}
@@ -204,26 +186,24 @@ export default function ReportsPage() {
         {/* Violations by Type */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">
-              Worker Safety Violations by Category
-            </CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle>Worker Safety Violations by Category</CardTitle>
+            <CardDescription>
               Anomaly frequency across active computer vision detection heads
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3.5">
             {violationEntries.length === 0 ? (
-              <div className="py-8 text-center text-xs text-muted-foreground">
+              <div className="py-8 text-center text-meta text-muted">
                 No violation anomalies registered today.
               </div>
             ) : (
               violationEntries.map(([category, count]) => (
                 <div
                   key={category}
-                  className="flex items-center justify-between border-b border-border pb-2 text-xs"
+                  className="flex items-center justify-between border-b border-border pb-2 text-meta"
                 >
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="size-3.5 text-amber-500" />
+                    <AlertTriangle className="size-3.5 text-brand" />
                     <span className="font-medium text-foreground capitalize">
                       {category.replace(/_/g, ' ')}
                     </span>
@@ -236,9 +216,9 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      {/* Backend Architecture Notice */}
-      <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground">
-        <Info className="size-4 shrink-0 text-amber-500 mt-0.5" />
+      {/* Architecture Notice */}
+      <div className="flex items-start gap-3 rounded-[12px] border border-border bg-surface-raised p-4 text-meta text-muted">
+        <Info className="size-4 shrink-0 text-brand mt-0.5" />
         <div className="space-y-1">
           <p className="font-medium text-foreground">Operational Data Scope Notice</p>
           <p className="leading-relaxed">
