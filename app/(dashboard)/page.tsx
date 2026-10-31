@@ -12,14 +12,6 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import {
   Cctv,
   Video,
   AlertOctagon,
@@ -31,7 +23,6 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import type { DashboardSummary, SafetyIncident } from '@/types/api';
-
 import { useEstimUi } from '@/store/estim-ui-store';
 
 export default function OverviewPage() {
@@ -98,29 +89,27 @@ export default function OverviewPage() {
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Status */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-border">
         <div>
-          <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Industrial Facility Safety Overview
           </h2>
-          <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+          <p className="text-micro text-muted font-mono mt-0.5">
             Continuous real-time computer vision inference on active camera feeds
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/live"
-            className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-muted hover:text-foreground gap-1.5 transition-colors"
-          >
-            <Video className="size-3.5" />
-            Live Feeds
+        <div className="flex items-center gap-2.5">
+          <Link href="/live">
+            <Button variant="secondary" size="sm" className="gap-1.5">
+              <Video className="size-3.5" />
+              Live Feeds
+            </Button>
           </Link>
-          <Link
-            href="/incidents"
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-amber-500 hover:bg-amber-400 px-2.5 text-xs text-slate-950 font-semibold gap-1.5 transition-colors"
-          >
-            <ShieldAlert className="size-3.5" />
-            View All Incidents
+          <Link href="/incidents">
+            <Button variant="default" size="sm" className="gap-1.5">
+              <ShieldAlert className="size-3.5" />
+              View All Incidents
+            </Button>
           </Link>
         </div>
       </div>
@@ -171,19 +160,17 @@ export default function OverviewPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Violations by Category</CardTitle>
-                <CardDescription className="text-xs">
-                  Detected safety anomalies today
-                </CardDescription>
+                <CardTitle>Violations by Category</CardTitle>
+                <CardDescription>Detected safety anomalies today</CardDescription>
               </div>
-              <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground">
+              <span className="font-mono text-micro font-semibold px-2 py-0.5 rounded-[6px] bg-surface-raised border border-border text-subtle">
                 {totalViolationsCount} Total
               </span>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {violationEntries.length === 0 ? (
-              <div className="py-8 text-center text-xs text-muted-foreground">
+              <div className="py-8 text-center text-meta text-muted">
                 No safety violations detected today.
               </div>
             ) : (
@@ -192,18 +179,18 @@ export default function OverviewPage() {
                   totalViolationsCount > 0 ? Math.round((count / totalViolationsCount) * 100) : 0;
                 return (
                   <div key={category} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center justify-between text-meta">
                       <span className="font-medium text-foreground capitalize">
                         {category.replace(/_/g, ' ')}
                       </span>
-                      <span className="font-mono text-muted-foreground">
+                      <span className="font-mono text-muted">
                         {count} ({percentage}%)
                       </span>
                     </div>
                     {/* Visual Ratio Progress Bar */}
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken border border-border">
                       <div
-                        className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                        className="h-full rounded-full bg-brand transition-all duration-500"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -218,14 +205,14 @@ export default function OverviewPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base font-semibold">Priority Safety Incidents</CardTitle>
-              <CardDescription className="text-xs">
+              <CardTitle>Priority Safety Incidents</CardTitle>
+              <CardDescription>
                 Most recent hazardous events requiring supervisor action
               </CardDescription>
             </div>
             <Link
               href="/incidents"
-              className="inline-flex h-7 items-center justify-center rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground gap-1 transition-colors"
+              className="inline-flex h-7 items-center justify-center rounded-[6px] px-2 text-micro font-medium text-subtle hover:bg-surface-raised hover:text-foreground gap-1 transition-colors"
             >
               View Queue
               <ArrowRight className="size-3" />
@@ -235,73 +222,72 @@ export default function OverviewPage() {
             {recentIncidents.length === 0 ? (
               <div className="p-6 text-center">
                 <EmptyState
-                  icon={<ShieldCheck className="size-5 text-emerald-500" />}
+                  icon={<ShieldCheck className="size-5 text-success" />}
                   title="No active safety incidents"
                   description="All monitored facility zones are currently compliant with worker safety guidelines."
                 />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[90px]">Severity</TableHead>
-                    <TableHead>Hazard / Event</TableHead>
-                    <TableHead>Detected At</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentIncidents.map((inc) => (
-                    <TableRow key={inc.id}>
-                      <TableCell>
-                        <SeverityBadge severity={inc.severity} />
-                      </TableCell>
-                      <TableCell className="font-medium text-xs">
-                        <div className="capitalize text-foreground font-semibold">
-                          {inc.incident_type.replace(/_/g, ' ')}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground font-mono">
-                          Detections: {inc.detection_count}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="size-3 text-muted-foreground shrink-0" />
-                          {new Date(inc.last_detected_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={inc.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {inc.status === 'open' ? (
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            disabled={acknowledgingId === inc.id}
-                            onClick={() => handleAcknowledge(inc.id)}
-                            className="h-6 text-[11px] font-mono border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
-                          >
-                            {acknowledgingId === inc.id ? 'Saving...' : 'Acknowledge'}
-                          </Button>
-                        ) : (
-                          <Link
-                            href="/incidents"
-                            className="inline-flex h-6 items-center justify-center rounded px-2 text-[11px] font-mono text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                          >
-                            Inspect
-                          </Link>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th className="w-[110px]">Severity</th>
+                      <th>Hazard / Event</th>
+                      <th>Detected At</th>
+                      <th>Status</th>
+                      <th className="text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentIncidents.map((inc) => (
+                      <tr key={inc.id}>
+                        <td>
+                          <SeverityBadge severity={inc.severity} />
+                        </td>
+                        <td className="font-medium text-body">
+                          <div className="capitalize text-foreground font-semibold">
+                            {inc.incident_type.replace(/_/g, ' ')}
+                          </div>
+                          <div className="text-micro text-muted font-mono">
+                            Detections: {inc.detection_count}
+                          </div>
+                        </td>
+                        <td className="font-mono text-meta text-muted">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="size-3 text-muted shrink-0" />
+                            {new Date(inc.last_detected_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                            })}
+                          </div>
+                        </td>
+                        <td>
+                          <StatusBadge status={inc.status} />
+                        </td>
+                        <td className="text-right">
+                          {inc.status === 'open' ? (
+                            <Button
+                              size="xs"
+                              variant="soft"
+                              loading={acknowledgingId === inc.id}
+                              loadingText="Saving..."
+                              onClick={() => handleAcknowledge(inc.id)}
+                            >
+                              Acknowledge
+                            </Button>
+                          ) : (
+                            <Link href="/incidents" className="text-link text-meta">
+                              Inspect
+                            </Link>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
