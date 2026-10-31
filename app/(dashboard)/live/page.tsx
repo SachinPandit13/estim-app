@@ -10,8 +10,10 @@ import { ErrorState } from '@/components/shared/error-state';
 import { Button } from '@/components/ui/button';
 import { Video, Grid2X2, Grid3X3, LayoutList, RefreshCw } from 'lucide-react';
 import type { Camera } from '@/types/api';
+import { useEstimUi } from '@/store/estim-ui-store';
 
 export default function LiveMonitoringPage() {
+  const { toast } = useEstimUi();
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,10 @@ export default function LiveMonitoringPage() {
   const handleConnectLocalWebcam = async () => {
     const existing = cameras.find((c) => c.source_type === 'webcam');
     if (existing) {
-      alert(`Local device camera "${existing.name}" is already active in your camera feeds.`);
+      toast.warning(
+        'Webcam Already Active',
+        `Local device camera "${existing.name}" is already active in your camera feeds.`,
+      );
       return;
     }
 
@@ -53,9 +58,16 @@ export default function LiveMonitoringPage() {
           is_enabled: true,
         }),
       });
+      toast.success(
+        'Webcam Feed Registered',
+        'Local device camera is now active and streaming telemetry.',
+      );
       await fetchCameras();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to register webcam feed');
+      toast.error(
+        'Connection Failed',
+        err instanceof Error ? err.message : 'Failed to register webcam feed',
+      );
     } finally {
       setConnectingWebcam(false);
     }
@@ -64,68 +76,74 @@ export default function LiveMonitoringPage() {
   const filteredCameras = cameras.filter((cam) => {
     const matchesSearch =
       cam.name.toLowerCase().includes(search.toLowerCase()) ||
-      (cam.location && cam.location.toLowerCase().includes(search.toLowerCase()));
+      Boolean(cam.location && cam.location.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus =
       statusFilter === 'all' || cam.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border">
         <div>
-          <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Live Facility Telemetry & Video Feeds
           </h2>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-micro text-muted font-mono mt-0.5">
             {cameras.length} registered cameras •{' '}
             {cameras.filter((c) => c.status === 'online').length} operational feeds
           </p>
         </div>
 
         {/* Action Controls & Layout Switcher */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             size="sm"
             onClick={handleConnectLocalWebcam}
-            disabled={connectingWebcam}
-            className="h-8 gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
+            loading={connectingWebcam}
+            loadingText="Connecting..."
+            variant="default"
+            className="gap-1.5"
           >
             <Video className="size-3.5" />
-            {connectingWebcam ? 'Connecting...' : 'Connect Device Cam'}
+            Connect Device Cam
           </Button>
 
-          <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+          {/* Grid View Switcher */}
+          <div className="flex items-center rounded-[8px] border border-border bg-surface p-0.5 shadow-xs">
             <button
+              type="button"
               onClick={() => setGridLayout('1')}
               title="Single Focus"
-              className={`flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
+              className={`flex size-7 items-center justify-center rounded-[6px] text-xs transition-colors ${
                 gridLayout === '1'
-                  ? 'bg-muted text-foreground font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-surface-raised text-brand font-semibold shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               <LayoutList className="size-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => setGridLayout('2')}
               title="2x2 Matrix"
-              className={`flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
+              className={`flex size-7 items-center justify-center rounded-[6px] text-xs transition-colors ${
                 gridLayout === '2'
-                  ? 'bg-muted text-foreground font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-surface-raised text-brand font-semibold shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               <Grid2X2 className="size-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => setGridLayout('3')}
               title="3x3 Matrix"
-              className={`flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
+              className={`flex size-7 items-center justify-center rounded-[6px] text-xs transition-colors ${
                 gridLayout === '3'
-                  ? 'bg-muted text-foreground font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-surface-raised text-brand font-semibold shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               <Grid3X3 className="size-3.5" />
@@ -133,11 +151,11 @@ export default function LiveMonitoringPage() {
           </div>
 
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={fetchCameras}
             disabled={loading}
-            className="h-8 gap-1.5 text-xs font-mono"
+            className="gap-1.5 font-mono"
           >
             <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -160,7 +178,7 @@ export default function LiveMonitoringPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-hidden font-mono"
+          className="h-9 rounded-[10px] border border-border bg-surface px-3 text-xs text-foreground font-mono transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ring"
         >
           <option value="all">All Statuses</option>
           <option value="online">Online Only</option>
@@ -173,7 +191,7 @@ export default function LiveMonitoringPage() {
         <ErrorState message={error} onRetry={fetchCameras} />
       ) : filteredCameras.length === 0 ? (
         <EmptyState
-          icon={<Video className="size-6 text-muted-foreground" />}
+          icon={<Video className="size-6 text-muted" />}
           title="No cameras matching query"
           description="Adjust your search criteria or register new facility camera sources."
         />
@@ -188,11 +206,7 @@ export default function LiveMonitoringPage() {
           }`}
         >
           {filteredCameras.map((camera) => (
-            <StreamPlaceholder
-              key={camera.id}
-              camera={camera}
-              // onToggleStatus={fetchCameras}
-            />
+            <StreamPlaceholder key={camera.id} camera={camera} />
           ))}
         </div>
       )}
