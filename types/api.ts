@@ -164,6 +164,14 @@ export interface NotificationItem {
   created_at: string;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 export interface DashboardSummary {
   total_cameras: number;
   online_cameras: number;
